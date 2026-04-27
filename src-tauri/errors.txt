@@ -1,0 +1,52 @@
+    Checking app v0.1.0 (D:\INVRON LABS\Projects\Invron Projects\Development\InvronE-lib\src-tauri)
+warning: unused import: `std::io::Read`
+   --> src\books.rs:224:9
+    |
+224 |     use std::io::Read;
+    |         ^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `axum::response::Response`
+ --> src\server.rs:1:5
+  |
+1 | use axum::response::Response;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Query`
+ --> src\server.rs:4:15
+  |
+4 |     extract::{Query, State, Path},
+  |               ^^^^^
+
+warning: unused import: `std::path::PathBuf`
+ --> src\audit.rs:4:5
+  |
+4 | use std::path::PathBuf;
+  |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `DateTime`
+ --> src\audit.rs:5:14
+  |
+5 | use chrono::{DateTime, Utc};
+  |              ^^^^^^^^
+
+error[E0382]: borrow of moved value: `class_id`
+   --> src\state.rs:141:20
+    |
+138 | pub async fn start_session(state: tauri::State<'_, AppState>, class_id: String) -> Result<(), String> {
+    |                                                               -------- move occurs because `class_id` has type `std::string::String`, which does not implement the `Copy` trait
+139 |     let mut active = state.active_class.write().await;
+140 |     *active = Some(class_id);
+    |                    -------- value moved here
+141 |     *active = Some(class_id.clone());
+    |                    ^^^^^^^^ value borrowed here after move
+    |
+help: consider cloning the value if the performance cost is acceptable
+    |
+140 |     *active = Some(class_id.clone());
+    |                            ++++++++
+
+For more information about this error, try `rustc --explain E0382`.
+warning: `app` (lib) generated 5 warnings
+error: could not compile `app` (lib) due to 1 previous error; 5 warnings emitted

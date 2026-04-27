@@ -1,0 +1,753 @@
+@import "tailwindcss";
+
+/* Enable class-based dark mode for Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Custom theme for Invro Libera */
+@theme {
+  --font-family-sans: 'Lexend', sans-serif;
+
+  /* Custom colors — brand palette */
+  --color-primary: #1f70af;
+  --color-secondary: #118362;
+  --color-background-light: #fafbfc;
+  --color-background-dark: #171717;
+  --color-reader-bg: #1a1a1a;
+}
+
+/* Base styles */
+html {
+  font-family: 'Lexend', sans-serif;
+}
+
+body {
+  background-color: #fafbfc;
+  color: #0f172a;
+}
+
+/* Dark mode base — Warm Charcoal palette */
+.dark body {
+  background-color: #171717;
+  color: #e5e5e5;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   DESIGN TOKENS — Warm Charcoal Dark Palette
+   All dark-mode colors are defined ONCE here as CSS custom properties.
+   Every override below references these tokens, so changing the palette
+   means editing values in one place — not hunting through 80+ rules.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+:root {
+  /* Light mode surfaces */
+  --surface-base: #ffffff;
+  --surface-hover: #fafbfc;
+  --surface-muted: #f8fafc;
+  /* slate-50 equiv */
+  --surface-subtle: #f1f5f9;
+  /* slate-100 equiv */
+  --surface-dim: #e2e8f0;
+  /* slate-200 equiv */
+  --surface-strong: #cbd5e1;
+  /* slate-300 equiv */
+
+  /* Light mode text */
+  --text-primary: #0f172a;
+  /* slate-900 */
+  --text-secondary: #1e293b;
+  /* slate-800 */
+  --text-body: #334155;
+  /* slate-700 */
+  --text-muted: #475569;
+  /* slate-600 */
+  --text-subtle: #64748b;
+  /* slate-500 */
+
+  /* Light mode borders */
+  --border-subtle: #f1f5f9;
+  /* slate-100 */
+  --border-default: #e2e8f0;
+  /* slate-200 */
+  --border-strong: #cbd5e1;
+  /* slate-300 */
+
+  /* Accents — error/destructive */
+  --red-surface: rgba(254, 242, 242, 1);
+  /* red-50 */
+  --red-border: rgba(254, 202, 202, 1);
+  /* red-200 */
+  --red-border-dim: rgba(254, 226, 226, 1);
+  /* red-100 */
+  --red-hover: rgba(254, 226, 226, 1);
+  /* red-100 */
+  --red-hover-dim: rgba(254, 242, 242, 1);
+  /* red-50 */
+}
+
+.dark {
+  /* Dark mode surfaces — Warm Charcoal */
+  --surface-base: #262626;
+  --surface-hover: #2a2a2a;
+  --surface-muted: #262626;
+  --surface-subtle: #333333;
+  --surface-dim: #404040;
+  --surface-strong: #525252;
+
+  /* Dark mode text */
+  --text-primary: #f5f5f5;
+  --text-secondary: #e5e5e5;
+  --text-body: #d4d4d4;
+  --text-muted: #a3a3a3;
+  --text-subtle: #a3a3a3;
+
+  /* Dark mode borders */
+  --border-subtle: #333333;
+  --border-default: #333333;
+  --border-strong: #404040;
+
+  /* Accents — error/destructive (dark) */
+  --red-surface: rgba(127, 29, 29, 0.25);
+  --red-border: rgba(153, 27, 27, 0.4);
+  --red-border-dim: rgba(153, 27, 27, 0.3);
+  --red-hover: rgba(127, 29, 29, 0.4);
+  --red-hover-dim: rgba(127, 29, 29, 0.3);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   DARK MODE — Global Tailwind utility overrides
+   These map Tailwind's generated slate/white utilities to our tokens so
+   components don't need explicit `dark:` classes for the basics.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Text */
+.dark .text-slate-900 {
+  color: var(--text-primary);
+}
+
+.dark .text-slate-800 {
+  color: var(--text-secondary);
+}
+
+.dark .text-slate-700 {
+  color: var(--text-body);
+}
+
+.dark .text-slate-600 {
+  color: var(--text-muted);
+}
+
+.dark .text-slate-500 {
+  color: var(--text-subtle);
+}
+
+/* Hover / focus text */
+.dark .hover\:text-slate-900:hover {
+  color: var(--text-primary);
+}
+
+.dark .hover\:text-slate-600:hover {
+  color: var(--text-muted);
+}
+
+/* Borders */
+.dark .border-slate-100 {
+  border-color: var(--border-subtle);
+}
+
+.dark .border-slate-200 {
+  border-color: var(--border-default);
+}
+
+.dark .border-slate-300 {
+  border-color: var(--border-strong);
+}
+
+.dark .divide-slate-100> :not(:last-child) {
+  border-color: var(--border-subtle);
+}
+
+.dark .divide-slate-200> :not(:last-child) {
+  border-color: var(--border-default);
+}
+
+.dark .hover\:border-slate-200:hover {
+  border-color: var(--border-strong);
+}
+
+.dark .hover\:border-slate-300:hover {
+  border-color: var(--surface-strong);
+}
+
+/* Container backgrounds — scoped to block-level & form elements;
+   excludes <span> to keep toggle-knob circles white */
+.dark :is(div, section, article, header, main, nav, aside, footer, form, input, select, textarea).bg-white {
+  background-color: var(--surface-base);
+}
+
+.dark :is(div, section, article).bg-white\/70 {
+  background-color: color-mix(in srgb, var(--surface-base) 70%, transparent);
+}
+
+.dark :is(div, section, article).bg-white\/60 {
+  background-color: color-mix(in srgb, var(--surface-base) 60%, transparent);
+}
+
+/* Subtle / muted backgrounds */
+.dark .bg-slate-50 {
+  background-color: var(--surface-muted);
+}
+
+.dark .bg-slate-100 {
+  background-color: var(--surface-subtle);
+}
+
+.dark .bg-slate-200 {
+  background-color: var(--surface-dim);
+}
+
+.dark .bg-slate-300 {
+  background-color: var(--surface-strong);
+}
+
+/* Hover backgrounds */
+.dark .hover\:bg-slate-50:hover {
+  background-color: var(--surface-hover);
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: #3a3a3a;
+}
+
+.dark .hover\:bg-slate-200:hover {
+  background-color: #454545;
+}
+
+/* Error / destructive accents */
+.dark .bg-red-50 {
+  background-color: var(--red-surface);
+}
+
+.dark .border-red-200 {
+  border-color: var(--red-border);
+}
+
+.dark .border-red-100 {
+  border-color: var(--red-border-dim);
+}
+
+.dark .hover\:bg-red-100:hover {
+  background-color: var(--red-hover);
+}
+
+.dark .hover\:bg-red-50:hover {
+  background-color: var(--red-hover-dim);
+}
+
+/* Native form controls in dark mode */
+.dark select {
+  color-scheme: dark;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Material Symbols configuration */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.material-symbols-outlined.fill {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.fill-1 {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom range slider styling */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #1f70af;
+  cursor: pointer;
+  margin-top: -6px;
+  box-shadow: 0 0 0 4px rgba(31, 112, 175, 0.2);
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  background: #e2e8f0;
+  border-radius: 2px;
+}
+
+input[type=range]:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 6px rgba(31, 112, 175, 0.3);
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* EPUB reader search highlight */
+mark.epub-search-highlight {
+  background-color: #fde047;
+  color: #1f2937 !important;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* ═══════ PDF Reader Animations ═══════ */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   READER CHROME THEMING — Design Token Approach
+   Each reader theme defines its palette as scoped CSS properties, then
+   the overrides reference those properties. Changing a reader palette
+   means editing one block, not dozens of selector/value pairs.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* --- Token definitions per theme --- */
+.reader-theme.reader-theme-light {
+  --r-surface: #ffffff;
+  --r-surface-50: #f9fafb;
+  --r-surface-100: #f3f4f6;
+  --r-surface-200: #e5e7eb;
+}
+
+.reader-theme.reader-theme-dark {
+  --r-surface: #1e1e1e;
+  --r-surface-50: #262626;
+  --r-surface-100: #333333;
+  --r-surface-200: #444444;
+  --r-text-900: #e5e5e5;
+  --r-text-800: #d4d4d4;
+  --r-text-700: #bbbbbb;
+  --r-text-600: #aaaaaa;
+  --r-text-500: #999999;
+  --r-text-400: #777777;
+  --r-text-300: #666666;
+  --r-border-100: #333333;
+  --r-border-200: #404040;
+  --r-border-300: #555555;
+}
+
+.reader-theme.reader-theme-sepia {
+  --r-surface: #f7f1e1;
+  --r-surface-50: #ede3cc;
+  --r-surface-100: #e5d8bd;
+  --r-surface-200: #d4c4a8;
+  --r-text-900: #3f2a14;
+  --r-text-800: #4a3218;
+  --r-text-700: #5c3d1f;
+  --r-text-600: #6d5536;
+  --r-text-500: #8b7355;
+  --r-text-400: #a99477;
+  --r-text-300: #c4ae90;
+  --r-border-100: #d4c4a8;
+  --r-border-200: #c4ae90;
+}
+
+/* --- LIGHT (isolate from app dark mode) --- */
+.reader-theme.reader-theme-light .bg-white {
+  background-color: var(--r-surface);
+}
+
+.reader-theme.reader-theme-light .bg-white\/80 {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.reader-theme.reader-theme-light .bg-white\/90 {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.reader-theme.reader-theme-light .bg-white\/95 {
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+/* --- DARK reader chrome --- */
+.reader-theme.reader-theme-dark .bg-white {
+  background-color: var(--r-surface);
+}
+
+.reader-theme.reader-theme-dark .bg-white\/80 {
+  background-color: rgba(30, 30, 30, 0.8);
+}
+
+.reader-theme.reader-theme-dark .bg-white\/90 {
+  background-color: rgba(30, 30, 30, 0.9);
+}
+
+.reader-theme.reader-theme-dark .bg-white\/95 {
+  background-color: rgba(30, 30, 30, 0.95);
+}
+
+.reader-theme.reader-theme-dark .bg-gray-50 {
+  background-color: var(--r-surface-50);
+}
+
+.reader-theme.reader-theme-dark .bg-gray-100 {
+  background-color: var(--r-surface-100);
+}
+
+.reader-theme.reader-theme-dark .bg-gray-200 {
+  background-color: var(--r-surface-200);
+}
+
+.reader-theme.reader-theme-dark .bg-blue-50 {
+  background-color: rgba(31, 112, 175, 0.12);
+}
+
+.reader-theme.reader-theme-dark .bg-amber-50 {
+  background-color: rgba(180, 83, 9, 0.12);
+}
+
+.reader-theme.reader-theme-dark .bg-amber-50\/70 {
+  background-color: rgba(180, 83, 9, 0.1);
+}
+
+.reader-theme.reader-theme-dark .bg-red-50 {
+  background-color: rgba(185, 28, 28, 0.15);
+}
+
+.reader-theme.reader-theme-dark .text-gray-900 {
+  color: var(--r-text-900);
+}
+
+.reader-theme.reader-theme-dark .text-gray-800 {
+  color: var(--r-text-800);
+}
+
+.reader-theme.reader-theme-dark .text-gray-700 {
+  color: var(--r-text-700);
+}
+
+.reader-theme.reader-theme-dark .text-gray-600 {
+  color: var(--r-text-600);
+}
+
+.reader-theme.reader-theme-dark .text-gray-500 {
+  color: var(--r-text-500);
+}
+
+.reader-theme.reader-theme-dark .text-gray-400 {
+  color: var(--r-text-400);
+}
+
+.reader-theme.reader-theme-dark .text-gray-300 {
+  color: var(--r-text-300);
+}
+
+.reader-theme.reader-theme-dark .border-gray-100 {
+  border-color: var(--r-border-100);
+}
+
+.reader-theme.reader-theme-dark .border-gray-200 {
+  border-color: var(--r-border-200);
+}
+
+.reader-theme.reader-theme-dark .border-gray-200\/60 {
+  border-color: rgba(64, 64, 64, 0.6);
+}
+
+.reader-theme.reader-theme-dark .border-gray-200\/70 {
+  border-color: rgba(64, 64, 64, 0.7);
+}
+
+.reader-theme.reader-theme-dark .border-gray-300 {
+  border-color: var(--r-border-300);
+}
+
+.reader-theme.reader-theme-dark .border-amber-200\/50 {
+  border-color: rgba(180, 83, 9, 0.2);
+}
+
+.reader-theme.reader-theme-dark .hover\:bg-gray-50:hover {
+  background-color: #2a2a2a;
+}
+
+.reader-theme.reader-theme-dark .hover\:bg-gray-100:hover {
+  background-color: var(--r-surface-100);
+}
+
+.reader-theme.reader-theme-dark .hover\:bg-red-50:hover {
+  background-color: rgba(185, 28, 28, 0.2);
+}
+
+.reader-theme.reader-theme-dark .hover\:text-gray-600:hover {
+  color: #ddd;
+}
+
+.reader-theme.reader-theme-dark .hover\:text-gray-700:hover {
+  color: #e5e5e5;
+}
+
+.reader-theme.reader-theme-dark .hover\:border-gray-300:hover {
+  border-color: var(--r-border-300);
+}
+
+.reader-theme.reader-theme-dark .placeholder\:text-gray-400::placeholder {
+  color: var(--r-text-400);
+}
+
+.reader-theme.reader-theme-dark select,
+.reader-theme.reader-theme-dark input[type="number"] {
+  color-scheme: dark;
+}
+
+.reader-theme.reader-theme-dark .shadow-2xl {
+  --tw-shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+.reader-theme.reader-theme-dark .shadow-lg {
+  --tw-shadow-color: rgba(0, 0, 0, 0.4);
+}
+
+.reader-theme.reader-theme-dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* --- SEPIA reader chrome --- */
+.reader-theme.reader-theme-sepia .bg-white {
+  background-color: var(--r-surface);
+}
+
+.reader-theme.reader-theme-sepia .bg-white\/80 {
+  background-color: rgba(247, 241, 225, 0.8);
+}
+
+.reader-theme.reader-theme-sepia .bg-white\/90 {
+  background-color: rgba(247, 241, 225, 0.9);
+}
+
+.reader-theme.reader-theme-sepia .bg-white\/95 {
+  background-color: rgba(247, 241, 225, 0.95);
+}
+
+.reader-theme.reader-theme-sepia .bg-gray-50 {
+  background-color: var(--r-surface-50);
+}
+
+.reader-theme.reader-theme-sepia .bg-gray-100 {
+  background-color: var(--r-surface-100);
+}
+
+.reader-theme.reader-theme-sepia .bg-gray-200 {
+  background-color: var(--r-surface-200);
+}
+
+.reader-theme.reader-theme-sepia .bg-blue-50 {
+  background-color: rgba(31, 112, 175, 0.08);
+}
+
+.reader-theme.reader-theme-sepia .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.08);
+}
+
+.reader-theme.reader-theme-sepia .bg-amber-50\/70 {
+  background-color: rgba(245, 158, 11, 0.06);
+}
+
+.reader-theme.reader-theme-sepia .text-gray-900 {
+  color: var(--r-text-900);
+}
+
+.reader-theme.reader-theme-sepia .text-gray-800 {
+  color: var(--r-text-800);
+}
+
+.reader-theme.reader-theme-sepia .text-gray-700 {
+  color: var(--r-text-700);
+}
+
+.reader-theme.reader-theme-sepia .text-gray-600 {
+  color: var(--r-text-600);
+}
+
+.reader-theme.reader-theme-sepia .text-gray-500 {
+  color: var(--r-text-500);
+}
+
+.reader-theme.reader-theme-sepia .text-gray-400 {
+  color: var(--r-text-400);
+}
+
+.reader-theme.reader-theme-sepia .text-gray-300 {
+  color: var(--r-text-300);
+}
+
+.reader-theme.reader-theme-sepia .border-gray-100 {
+  border-color: var(--r-border-100);
+}
+
+.reader-theme.reader-theme-sepia .border-gray-200 {
+  border-color: var(--r-border-200);
+}
+
+.reader-theme.reader-theme-sepia .border-gray-200\/60 {
+  border-color: rgba(196, 174, 144, 0.6);
+}
+
+.reader-theme.reader-theme-sepia .border-gray-200\/70 {
+  border-color: rgba(196, 174, 144, 0.7);
+}
+
+.reader-theme.reader-theme-sepia .border-amber-200\/50 {
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.reader-theme.reader-theme-sepia .hover\:bg-gray-50:hover {
+  background-color: var(--r-surface-50);
+}
+
+.reader-theme.reader-theme-sepia .hover\:bg-gray-100:hover {
+  background-color: var(--r-surface-100);
+}
+
+.reader-theme.reader-theme-sepia .hover\:text-gray-600:hover {
+  color: var(--r-text-900);
+}
+
+.reader-theme.reader-theme-sepia .hover\:text-gray-700:hover {
+  color: var(--r-text-900);
+}
+
+.reader-theme.reader-theme-sepia .placeholder\:text-gray-400::placeholder {
+  color: var(--r-text-400);
+}
+
+/* ═══════ PDF Page Transition ═══════ */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.pdf-page-enter {
+  animation: pageEnter 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* PDF viewer hidden-scrollbar (keeps scroll, hides bar) */
+.pdf-viewer-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.pdf-viewer-scroll {
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Thin scrollbar for sidebar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+}
+
+/* Tabular nums utility */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
