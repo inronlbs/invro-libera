@@ -106,9 +106,14 @@ export function formatCatalogSyncError(error: unknown): string {
  * Silent wrapper for auto-syncing on app launch.
  * Enforces a 3-second timeout so it doesn't hang if the host is offline.
  */
+import { performAutoUpdate } from './githubPackSync';
+
 export async function syncOnLaunch(): Promise<void> {
   let timerId: ReturnType<typeof setTimeout> | undefined;
   try {
+    // Also trigger cloud pack check
+    void performAutoUpdate();
+
     const timeoutPromise = new Promise((_, reject) => {
       timerId = setTimeout(() => reject(new Error('Sync timeout')), 3000);
     });

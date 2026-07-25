@@ -179,14 +179,16 @@ export async function importInvronPackData(buffer: ArrayBuffer): Promise<SyncSum
  * Full update flow: checks version, downloads pack, imports, and records new version.
  * Returns null if no update was needed or if it failed.
  */
-export async function performAutoUpdate(versionUrl: string | undefined): Promise<SyncSummary | null> {
-  if (!versionUrl) return null;
+const OFFICIAL_MANIFEST_URL = "https://raw.githubusercontent.com/inronlbs/invro-libera-books/main/manifest.json";
+
+export async function performAutoUpdate(versionUrl?: string): Promise<SyncSummary | null> {
+  const targetUrl = versionUrl || OFFICIAL_MANIFEST_URL;
   
   const settings = await getSettings();
   const currentVersion = settings.lastImportedVersion;
   
-  console.log(`[AutoUpdate] Checking ${versionUrl}... Current version: ${currentVersion || 'none'}`);
-  const manifest = await checkGithubForUpdate(versionUrl);
+  console.log(`[AutoUpdate] Checking ${targetUrl}... Current version: ${currentVersion || 'none'}`);
+  const manifest = await checkGithubForUpdate(targetUrl);
   
   if (!manifest || !manifest.pack_url || !manifest.version) {
     console.log("[AutoUpdate] Invalid manifest or fetch failed.");

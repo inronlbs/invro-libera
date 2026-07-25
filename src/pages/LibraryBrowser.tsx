@@ -129,6 +129,8 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
     try {
       const { syncCatalogForUser } = await loadCatalogSync();
       await syncCatalogForUser();
+      const { performAutoUpdate } = await import('../services/githubPackSync');
+      await performAutoUpdate();
 
       sessionStorage.setItem('invro_last_manual_sync', String(Date.now()));
       await loadBooks();
