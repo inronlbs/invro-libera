@@ -25,11 +25,6 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const PDFReader = lazy(() => import('./components/readers/PDFReader'));
 const EPUBReader = lazy(() => import('./components/readers/EPUBReader'));
 
-const TeacherAppShell = lazy(() => import('./components/host/TeacherAppShell'));
-const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard'));
-const TeacherClasses = lazy(() => import('./pages/teacher/TeacherClasses'));
-const TeacherLibrary = lazy(() => import('./pages/teacher/TeacherLibrary'));
-const HostSettingsPage = lazy(() => import('./pages/teacher/HostSettingsPage'));
 const StudentLogin = lazy(() => import('./pages/StudentLogin'));
 
 class GlobalErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -397,11 +392,7 @@ function App() {
 
   const navigate = useNavigate();
   const handleOpenBook = useCallback((book: Book) => {
-    if (isTauriEnvironment()) {
-      navigate(`/teacher/reader/${book.id}`);
-    } else {
-      navigate(`/reader/${book.id}`);
-    }
+    navigate(`/reader/${book.id}`);
   }, [navigate]);
 
   if (!isInitialized) {
@@ -413,62 +404,19 @@ function App() {
     );
   }
 
-  // Teacher uses the native Tauri Host Panel — but only if licensed
-  if (isTauriEnvironment()) {
-    // Show setup wizard if no valid license
-    if (licenseValid === false) {
-      return (
-        <GlobalErrorBoundary>
-          <Suspense fallback={<RouteFallback message="Loading Setup..." />}>
-            <SetupWizard
-              expiredLicense={expiredLicense}
-              onActivated={() => {
-                setLicenseValid(true);
-                setExpiredLicense(null);
-              }}
-            />
-          </Suspense>
-        </GlobalErrorBoundary>
-      );
-    }
-
+  // License check in Tauri standalone desktop app
+  if (isTauriEnvironment() && licenseValid === false) {
     return (
       <GlobalErrorBoundary>
-        <Routes>
-          <Route path="/teacher" element={
-            <Suspense fallback={<RouteFallback message="Loading Teacher Portal..." />}>
-              <TeacherAppShell />
-            </Suspense>
-          }>
-            <Route index element={
-              <Suspense fallback={<RouteFallback message="Loading Dashboard..." />}>
-                <TeacherDashboard />
-              </Suspense>
-            } />
-            <Route path="dashboard" element={
-              <Suspense fallback={<RouteFallback message="Loading Dashboard..." />}>
-                <TeacherDashboard />
-              </Suspense>
-            } />
-            <Route path="classes" element={
-              <Suspense fallback={<RouteFallback message="Loading Classes..." />}>
-                <TeacherClasses />
-              </Suspense>
-            } />
-            <Route path="library" element={
-              <Suspense fallback={<RouteFallback message="Loading Library..." />}>
-                <TeacherLibrary />
-              </Suspense>
-            } />
-            <Route path="settings" element={
-              <Suspense fallback={<RouteFallback message="Loading Settings..." />}>
-                <HostSettingsPage />
-              </Suspense>
-            } />
-            <Route path="reader/:bookId" element={<ReaderRoute resolveBookUrl={resolveBookUrl} />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/teacher" replace />} />
-        </Routes>
+        <Suspense fallback={<RouteFallback message="Loading Setup..." />}>
+          <SetupWizard
+            expiredLicense={expiredLicense}
+            onActivated={() => {
+              setLicenseValid(true);
+              setExpiredLicense(null);
+            }}
+          />
+        </Suspense>
       </GlobalErrorBoundary>
     );
   }
