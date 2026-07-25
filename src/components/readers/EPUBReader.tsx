@@ -973,19 +973,31 @@ export default function EPUBReader({ book, fileUrl, onClose }: EPUBReaderProps) 
       await appWindow.startDragging();
     }
   };
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const toggleFullscreen = async () => {
-    if (appWindow) {
-      // Tauri fullscreen
-      const current = await appWindow.isFullscreen();
-      await appWindow.setFullscreen(!current);
-      setIsFullscreen(!current);
-    } else {
-      // Browser fullscreen
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
+    try {
+      if (appWindow) {
+        const current = await appWindow.isFullscreen();
+        await appWindow.setFullscreen(!current);
+        setIsFullscreen(!current);
       } else {
-        await document.documentElement.requestFullscreen();
+        if (!document.fullscreenElement) {
+          if (containerRef.current?.requestFullscreen) {
+            await containerRef.current.requestFullscreen();
+          } else if (document.documentElement.requestFullscreen) {
+            await document.documentElement.requestFullscreen();
+          }
+          setIsFullscreen(true);
+        } else {
+          if (document.exitFullscreen) {
+            await document.exitFullscreen();
+          }
+          setIsFullscreen(false);
+        }
       }
+    } catch (err) {
+      console.warn('[EPUBReader] Fullscreen toggle error:', err);
     }
   };
 
@@ -1038,7 +1050,7 @@ export default function EPUBReader({ book, fileUrl, onClose }: EPUBReaderProps) 
   // ==========================================================================
 
   return (
-    <div className={`absolute inset-0 z-10 flex select-none reader-theme reader-theme-${readerTheme}`} style={{ height: '100%' }}>
+    <div ref={containerRef} className={`absolute inset-0 z-10 flex select-none reader-theme reader-theme-${readerTheme}`} style={{ height: '100%' }}>
 
       {/* Mobile Sidebar Backdrop removed */}
 
