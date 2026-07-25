@@ -55,9 +55,9 @@ export default function TeacherAppShell() {
       try {
         const settings = await getSettings();
         if (settings.librarySyncUrl) {
-          const summary = await performAutoUpdate(settings.librarySyncUrl);
-          if (summary && mounted) {
-            setUpdateSummary(summary);
+          const result = await performAutoUpdate(settings.librarySyncUrl);
+          if (result.summary && mounted) {
+            setUpdateSummary(result.summary);
           }
         }
       } catch (e) {

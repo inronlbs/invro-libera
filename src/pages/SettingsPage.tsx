@@ -13,7 +13,7 @@ import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { getSettings, updateSettings as dbUpdateSettings } from '../db';
-import { performAutoUpdate, type SyncSummary } from '../services/githubPackSync';
+import { performAutoUpdate, type CloudSyncResult } from '../services/githubPackSync';
 import { isTauriEnvironment } from '../services/localAuth';
 
 // ============================================================================
@@ -73,7 +73,7 @@ export default function SettingsPage() {
 
   // Cloud Sync state
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncSummary, setSyncSummary] = useState<SyncSummary | null>(null);
+  const [syncResult, setSyncResult] = useState<CloudSyncResult | null>(null);
 
   useEffect(() => {
     const loadAll = async () => {
@@ -188,12 +188,17 @@ export default function SettingsPage() {
 
   const handleCloudSync = async () => {
     setIsSyncing(true);
-    setSyncSummary(null);
+    setSyncResult(null);
     try {
-      const summary = await performAutoUpdate();
-      setSyncSummary(summary);
-    } catch (e) {
+      const result = await performAutoUpdate();
+      setSyncResult(result);
+    } catch (e: any) {
       console.error('[CloudSync] Error syncing library:', e);
+      setSyncResult({
+        success: false,
+        status: 'error',
+        message: `Sync Error: ${e.toString()}`
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -347,10 +352,18 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        {syncSummary && (
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 mt-3 space-y-1">
-            <p className="font-bold">Sync Completed!</p>
-            <p>New Books Added: {syncSummary.added} | Books Updated: {syncSummary.updated} | Skipped: {syncSummary.skipped}</p>
+        {syncResult && (
+          <div className={`p-3.5 rounded-xl border text-xs mt-3.5 space-y-1 ${
+            syncResult.status === 'error'
+              ? 'bg-red-50 border-red-200 text-red-900'
+              : syncResult.status === 'updated'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+              : 'bg-blue-50 border-blue-200 text-blue-900'
+          }`}>
+            <p className="font-bold">{syncResult.message}</p>
+            {syncResult.summary && (syncResult.summary.added > 0 || syncResult.summary.updated > 0) && (
+              <p className="text-[11px] opacity-80">Added: {syncResult.summary.added} | Updated: {syncResult.summary.updated} | Skipped: {syncResult.summary.skipped}</p>
+            )}
           </div>
         )}
       </section>

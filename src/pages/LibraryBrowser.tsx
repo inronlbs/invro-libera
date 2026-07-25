@@ -3,14 +3,9 @@
  * Browse, filter, and search books in the library
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { db, type Book } from '../db';
-import { requestLocalNotificationPermission, sendLocalNotification } from '../services/localNotifications';
 import { getClientSession } from '../services/localAuth';
-
-async function loadCatalogSync() {
-  return import('../services/catalogSync');
-}
 
 // ============================================================================
 // TYPES
@@ -43,8 +38,6 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [isLoading, setIsLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
   // Derive categories dynamically from loaded books
   const categories = useMemo(() => {
@@ -107,53 +100,7 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
     }
   };
 
-  // ==========================================================================
-  // MANUAL REFRESH (rate-limited to 60s)
-  // ==========================================================================
 
-  const handleManualSync = useCallback(async () => {
-    void requestLocalNotificationPermission();
-
-    // Rate limit: 60 seconds
-    const lastSync = sessionStorage.getItem('invro_last_manual_sync');
-    if (lastSync && Date.now() - Number(lastSync) < 60_000) {
-      const remaining = Math.ceil((60_000 - (Date.now() - Number(lastSync))) / 1000);
-      setSyncStatus(`Please wait ${remaining}s before refreshing again`);
-      setTimeout(() => setSyncStatus(null), 3000);
-      return;
-    }
-
-    setIsSyncing(true);
-    setSyncStatus('Syncing...');
-
-    try {
-      const { syncCatalogForUser } = await loadCatalogSync();
-      await syncCatalogForUser();
-      const { performAutoUpdate } = await import('../services/githubPackSync');
-      await performAutoUpdate();
-
-      sessionStorage.setItem('invro_last_manual_sync', String(Date.now()));
-      await loadBooks();
-      setSyncStatus('Library up to date');
-      sendLocalNotification('Library sync complete', {
-        body: 'Your assigned library is up to date on this device.',
-        tag: 'library-sync-success',
-      });
-    } catch (err) {
-      console.error('[LibraryBrowser] Manual sync failed:', err);
-      const { formatCatalogSyncError } = await loadCatalogSync();
-      const message = formatCatalogSyncError(err);
-      setSyncStatus(`Sync failed: ${message}`);
-      sendLocalNotification('Library sync failed', {
-        body: message,
-        tag: 'library-sync-failed',
-        requireInteraction: true,
-      });
-    } finally {
-      setIsSyncing(false);
-      setTimeout(() => setSyncStatus(null), 3000);
-    }
-  }, []);
 
   const handleToggleFavorite = async (e: React.MouseEvent, bookId: string) => {
     e.stopPropagation();
@@ -230,54 +177,6 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
         <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">Library</h2>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto">
-          {/* Import .invronpack Button */}
-          <button
-            onClick={async () => {
-              try {
-                const { open } = await import('@tauri-apps/plugin-dialog');
-                const { invoke } = await import('@tauri-apps/api/core');
-                const selected = await open({
-                  multiple: false,
-                  filters: [{ name: 'Invron Package', extensions: ['invronpack'] }]
-                });
-                if (selected && typeof selected === 'string') {
-                  setSyncStatus('Importing package...');
-                  const imported = await invoke<{ id: string; title: string }[]>('import_invronpack', { filePath: selected });
-                  await loadBooks();
-                  setSyncStatus(`Imported ${imported.length} book(s)`);
-                  setTimeout(() => setSyncStatus(null), 3000);
-                }
-              } catch (err: any) {
-                console.error('[LibraryBrowser] Package import error:', err);
-                setSyncStatus(`Import error: ${err.toString()}`);
-                setTimeout(() => setSyncStatus(null), 4000);
-              }
-            }}
-            className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition whitespace-nowrap shadow-xs"
-            title="Import offline .invronpack package"
-          >
-            <span className="material-symbols-outlined text-[18px]">upload_file</span>
-            Import Pack
-          </button>
-
-          {/* Refresh Button */}
-          <button
-            onClick={handleManualSync}
-            disabled={isSyncing}
-            className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg border border-slate-200 bg-white dark:bg-neutral-800 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-            title="Refresh library from cloud"
-          >
-            <span className={`material-symbols-outlined text-[18px] ${isSyncing ? 'animate-spin' : ''}`}>
-              sync
-            </span>
-            {isSyncing ? 'Syncing...' : 'Sync Cloud'}
-          </button>
-
-          {/* Sync Status Toast */}
-          {syncStatus && (
-            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 hidden sm:inline">{syncStatus}</span>
-          )}
-
           {/* Sort Dropdown */}
           <select
             value={sortBy}
