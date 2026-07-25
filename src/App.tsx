@@ -24,6 +24,7 @@ const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const PDFReader = lazy(() => import('./components/readers/PDFReader'));
 const EPUBReader = lazy(() => import('./components/readers/EPUBReader'));
+const Titlebar = lazy(() => import('./components/layout/Titlebar'));
 
 const StudentLogin = lazy(() => import('./pages/StudentLogin'));
 
@@ -436,9 +437,10 @@ function App() {
 
   return (
     <GlobalErrorBoundary>
+      <Titlebar />
       <Routes>
         <Route path="*" element={
-          <div className="min-h-screen bg-background-light">
+          <div className="min-h-[calc(100vh-36px)] bg-background-light">
             <ClassSessionBanner onSessionJoined={handleStudentLogin} />
             <Routes>
               <Route element={
