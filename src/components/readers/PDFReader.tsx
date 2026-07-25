@@ -440,23 +440,25 @@ export default function PDFReader({ book, fileUrl, onClose }: PDFReaderProps) {
 
   const toggleFullscreen = async () => {
     try {
-      const isCurrentlyFs = !!document.fullscreenElement || (appWindow ? await appWindow.isFullscreen() : false);
+      const isCurrentlyFs = isFullscreen || !!document.fullscreenElement || (appWindow ? await appWindow.isFullscreen() : false);
 
       if (!isCurrentlyFs) {
-        // Enter Fullscreen
+        // Enter Fullscreen: collapse left sidebar to maximize book reading space
+        setShowSidebar(false);
         if (containerRef.current?.requestFullscreen) {
-          await containerRef.current.requestFullscreen();
+          await containerRef.current.requestFullscreen().catch(() => {});
         } else if (document.documentElement.requestFullscreen) {
-          await document.documentElement.requestFullscreen();
+          await document.documentElement.requestFullscreen().catch(() => {});
         }
         if (appWindow) {
           await appWindow.setFullscreen(true).catch(() => {});
         }
         setIsFullscreen(true);
       } else {
-        // Exit Fullscreen
+        // Exit Fullscreen: restore sidebar
+        setShowSidebar(true);
         if (document.fullscreenElement && document.exitFullscreen) {
-          await document.exitFullscreen();
+          await document.exitFullscreen().catch(() => {});
         }
         if (appWindow) {
           await appWindow.setFullscreen(false).catch(() => {});
@@ -465,13 +467,8 @@ export default function PDFReader({ book, fileUrl, onClose }: PDFReaderProps) {
       }
     } catch (err) {
       console.warn('[PDFReader] Fullscreen toggle fallback:', err);
-      if (appWindow) {
-        try {
-          const isFs = await appWindow.isFullscreen();
-          await appWindow.setFullscreen(!isFs);
-          setIsFullscreen(!isFs);
-        } catch { /* ignore */ }
-      }
+      setShowSidebar(!showSidebar);
+      setIsFullscreen(!isFullscreen);
     }
   };
 
