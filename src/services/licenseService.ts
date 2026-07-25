@@ -142,3 +142,39 @@ export async function checkLicense(): Promise<{ valid: boolean; data?: LicenseDa
 export function daysRemaining(expiresAt: string): number {
   return Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000);
 }
+
+/**
+ * Retrieve stable Windows Registry MachineGuid hardware fingerprint
+ */
+export async function getDeviceFingerprint(): Promise<string> {
+  try {
+    return await invoke<string>('get_device_fingerprint');
+  } catch (err) {
+    console.warn('[License] Failed to fetch device fingerprint:', err);
+    return 'STANDALONE-DEV-GUID';
+  }
+}
+
+/**
+ * Native license status check from Rust backend
+ */
+export async function getNativeLicenseStatus() {
+  try {
+    return await invoke<{
+      is_valid: boolean;
+      school_name?: string;
+      machine_guid: string;
+      expiry_date?: string;
+      days_remaining?: number;
+      message: string;
+    }>('get_license_status');
+  } catch (err) {
+    console.warn('[License] Failed to fetch native license status:', err);
+    return {
+      is_valid: false,
+      machine_guid: 'STANDALONE-DEV-GUID',
+      message: 'License verification service unavailable'
+    };
+  }
+}
+

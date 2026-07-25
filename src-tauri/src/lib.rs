@@ -3,6 +3,7 @@ pub mod state;
 pub mod audit;
 pub mod tts;
 pub mod telemetry;
+pub mod license;
 
 use tauri::Manager;
 use tauri::image::Image;
@@ -84,6 +85,9 @@ pub fn run() {
         telemetry::discover_teacher_host,
         telemetry::send_telemetry_ping,
         telemetry::trigger_remote_download,
+        license::get_device_fingerprint,
+        license::verify_standalone_license,
+        license::get_license_status,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
