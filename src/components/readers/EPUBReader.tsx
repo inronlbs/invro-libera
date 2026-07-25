@@ -977,27 +977,38 @@ export default function EPUBReader({ book, fileUrl, onClose }: EPUBReaderProps) 
 
   const toggleFullscreen = async () => {
     try {
-      if (appWindow) {
-        const current = await appWindow.isFullscreen();
-        await appWindow.setFullscreen(!current);
-        setIsFullscreen(!current);
-      } else {
-        if (!document.fullscreenElement) {
-          if (containerRef.current?.requestFullscreen) {
-            await containerRef.current.requestFullscreen();
-          } else if (document.documentElement.requestFullscreen) {
-            await document.documentElement.requestFullscreen();
-          }
-          setIsFullscreen(true);
-        } else {
-          if (document.exitFullscreen) {
-            await document.exitFullscreen();
-          }
-          setIsFullscreen(false);
+      const isCurrentlyFs = !!document.fullscreenElement || (appWindow ? await appWindow.isFullscreen() : false);
+
+      if (!isCurrentlyFs) {
+        // Enter Fullscreen
+        if (containerRef.current?.requestFullscreen) {
+          await containerRef.current.requestFullscreen();
+        } else if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
         }
+        if (appWindow) {
+          await appWindow.setFullscreen(true).catch(() => {});
+        }
+        setIsFullscreen(true);
+      } else {
+        // Exit Fullscreen
+        if (document.fullscreenElement && document.exitFullscreen) {
+          await document.exitFullscreen();
+        }
+        if (appWindow) {
+          await appWindow.setFullscreen(false).catch(() => {});
+        }
+        setIsFullscreen(false);
       }
     } catch (err) {
-      console.warn('[EPUBReader] Fullscreen toggle error:', err);
+      console.warn('[EPUBReader] Fullscreen toggle fallback:', err);
+      if (appWindow) {
+        try {
+          const isFs = await appWindow.isFullscreen();
+          await appWindow.setFullscreen(!isFs);
+          setIsFullscreen(!isFs);
+        } catch { /* ignore */ }
+      }
     }
   };
 
