@@ -197,7 +197,7 @@ export default function SettingsPage() {
       setSyncResult({
         success: false,
         status: 'error',
-        message: `Sync Error: ${e.toString()}`
+        message: `Sync Error: ${e.message || e.toString()}`
       });
     } finally {
       setIsSyncing(false);
