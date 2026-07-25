@@ -8,6 +8,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { navPageToPath, type NavPage } from '../../navigation';
 import { usePwaInstall } from '../../hooks/usePwaInstall';
+import { isTauriEnvironment } from '../../services/localAuth';
 
 // ============================================================================
 // TYPES
@@ -51,6 +52,7 @@ export default function SidebarNew({
   userAvatar,
   isCollapsed = false,
 }: ExtendedSidebarProps) {
+  const isTauri = isTauriEnvironment();
   const navigate = useNavigate();
   const { isInstallable, isInstalled, promptInstall } = usePwaInstall();
   const [showSettingsMenu, setShowSettingsMenu] = useState(activePage === 'settings');
@@ -92,7 +94,8 @@ export default function SidebarNew({
     <>
       {/* Desktop Sidebar */}
       <aside ref={desktopMenuRef} className={`
-        flex fixed top-0 left-0 bg-white border-r border-slate-200 flex-col h-screen shrink-0 transition-all duration-300 z-50
+        flex fixed left-0 bg-white border-r border-slate-200 flex-col shrink-0 transition-all duration-300 z-50
+        ${isTauri ? 'top-9 h-[calc(100vh-36px)]' : 'top-0 h-screen'}
         ${isCollapsed ? 'w-20' : 'w-64'}
       `}>
         {/* Logo */}
