@@ -44,7 +44,8 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://invronlabs.com/api/tauri-update/{{target}}/{{arch}}/{{current_version}}"
+        "https://raw.githubusercontent.com/inronlbs/invro-libera-app/main/update.json",
+        "https://github.com/inronlbs/invro-libera-books/releases/latest/download/latest.json"
       ],
       "pubkey": ""
     }

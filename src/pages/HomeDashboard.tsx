@@ -206,7 +206,7 @@ export default function HomeDashboard({ userName = 'Reader', onOpenBook, searchQ
   const isSearching = searchQuery.trim().length > 0;
 
   return (
-    <div className="max-w-[1200px] w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-8 sm:gap-10 pb-8">
+    <div className="max-w-[1200px] w-full mx-auto p-4 sm:p-6 lg:p-8 pt-2 sm:pt-4 flex flex-col gap-8 sm:gap-10 pb-8">
       {/* Welcome Banner */}
       {!isSearching && (
         <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
@@ -218,61 +218,50 @@ export default function HomeDashboard({ userName = 'Reader', onOpenBook, searchQ
               Ready to continue your adventure?
             </p>
           </div>
-          <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto">
-            <div className="hidden md:block text-right">
-              <p className="text-sm font-medium text-slate-900">{formatDate()}</p>
-              <p className="text-xs text-slate-500">Keep up the great work!</p>
-            </div>
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-semibold text-slate-700">{formatDate()}</p>
+            <p className="text-xs text-slate-400">Keep up the great work!</p>
           </div>
         </section>
       )}
 
-      {/* Search Results Header */}
-      {isSearching && (
-        <section>
-          <p className="text-sm text-slate-500">
-            Found <span className="font-semibold text-slate-700">{filteredBooks.length}</span> books matching "<span className="font-medium">{searchQuery}</span>"
-          </p>
-        </section>
-      )}
-
-      {/* Quick Stats */}
+      {/* Stats Cards Row */}
       {!isSearching && (
-        <section className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-          <div className="bg-white p-3 sm:p-5 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3 sm:gap-4 col-span-2 md:col-span-1">
-            <div className="size-10 sm:size-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-[20px] sm:text-[24px]">local_fire_department</span>
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+            <div className="size-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 shrink-0">
+              <span className="material-symbols-outlined text-[24px]">local_fire_department</span>
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-bold text-slate-900">{stats.streak} Days</p>
-              <p className="text-xs sm:text-sm text-slate-500">Current Streak</p>
+              <p className="text-xl sm:text-2xl font-black text-slate-900">{stats.streak} Days</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current Streak</p>
             </div>
           </div>
 
-          <div className="bg-white p-3 sm:p-5 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3 sm:gap-4">
-            <div className="size-10 sm:size-12 rounded-full bg-[#1f70af]/10 text-[#1f70af] flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-[20px] sm:text-[24px]">import_contacts</span>
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+            <div className="size-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
+              <span className="material-symbols-outlined text-[24px]">menu_book</span>
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-bold text-slate-900">{stats.completed} Books</p>
-              <p className="text-xs sm:text-sm text-slate-500">Completed</p>
+              <p className="text-xl sm:text-2xl font-black text-slate-900">{stats.completed} Books</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Completed</p>
             </div>
           </div>
 
-          <div className="bg-white p-3 sm:p-5 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3 sm:gap-4">
-            <div className="size-10 sm:size-12 rounded-full bg-[#118362]/10 text-[#118362] flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-[20px] sm:text-[24px]">schedule</span>
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+            <div className="size-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0">
+              <span className="material-symbols-outlined text-[24px]">schedule</span>
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-bold text-slate-900">{stats.hoursRead} Hours</p>
-              <p className="text-xs sm:text-sm text-slate-500">Read Time</p>
+              <p className="text-xl sm:text-2xl font-black text-slate-900">{stats.hoursRead} Hours</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Read Time</p>
             </div>
           </div>
         </section>
       )}
 
       {/* Continue Reading Section */}
-      {filteredRecentBooks.length > 0 && (
+      {!isSearching && filteredRecentBooks.length > 0 && (
         <section className="flex flex-col gap-3 sm:gap-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Continue Reading</h3>
@@ -286,14 +275,11 @@ export default function HomeDashboard({ userName = 'Reader', onOpenBook, searchQ
                 onClick={() => onOpenBook(book)}
                 className="min-w-[220px] sm:min-w-[260px] md:min-w-[300px] snap-center sm:snap-start bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-slate-100 flex gap-3 sm:gap-4 transition hover:shadow-md cursor-pointer shrink-0"
               >
-                <div
-                  className="w-20 sm:w-24 h-28 sm:h-36 shrink-0 rounded-lg bg-cover bg-center shadow-sm bg-slate-200"
-                  style={cover ? { backgroundImage: `url('${cover}')` } : undefined}
-                >
-                  {!cover && (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="material-symbols-outlined text-3xl sm:text-4xl text-slate-400">menu_book</span>
-                    </div>
+                <div className="w-20 sm:w-24 h-28 sm:h-36 shrink-0 rounded-lg overflow-hidden shadow-sm bg-slate-200 flex items-center justify-center">
+                  {cover ? (
+                    <img src={cover} alt={book.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="material-symbols-outlined text-3xl sm:text-4xl text-slate-400">menu_book</span>
                   )}
                 </div>
                 <div className="flex flex-col flex-1 justify-between py-1">
@@ -323,20 +309,17 @@ export default function HomeDashboard({ userName = 'Reader', onOpenBook, searchQ
         </section>
       )}
 
-      {/* Featured Suggestion Hero (Minimal & Airy) */}
+      {/* Featured Suggestion Hero */}
       {!isSearching && featuredSuggestion && (() => {
         const featuredCover = resolveCoverUrl(featuredSuggestion.coverUrl);
         return (
         <section className="relative overflow-hidden rounded-[14px] bg-indigo-50/40 border border-indigo-100 shadow-sm transition-all hover:shadow-md hover:bg-indigo-50/70">
           <div className="relative p-4 sm:p-5 md:p-6 flex flex-col sm:flex-row gap-4 md:gap-6 items-center sm:items-stretch">
-            <div 
-              className="w-24 sm:w-28 md:w-32 aspect-[2/3] shrink-0 rounded-lg shadow-xl shadow-slate-200/60 bg-white bg-cover bg-center border border-slate-100 transition-transform hover:scale-[1.02]"
-              style={featuredCover ? { backgroundImage: `url('${featuredCover}')` } : undefined}
-            >
-              {!featuredCover && (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-3xl text-slate-300">import_contacts</span>
-                </div>
+            <div className="w-24 sm:w-28 md:w-32 aspect-[2/3] shrink-0 rounded-lg shadow-xl shadow-slate-200/60 bg-white overflow-hidden border border-slate-100 transition-transform hover:scale-[1.02] flex items-center justify-center">
+              {featuredCover ? (
+                <img src={featuredCover} alt={featuredSuggestion.title} className="w-full h-full object-cover" />
+              ) : (
+                <span className="material-symbols-outlined text-3xl text-slate-300">import_contacts</span>
               )}
             </div>
             <div className="flex flex-col flex-1 justify-center text-center sm:text-left h-full py-1">
@@ -344,18 +327,18 @@ export default function HomeDashboard({ userName = 'Reader', onOpenBook, searchQ
                 <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
                 Daily Discovery
               </span>
-              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight text-slate-900 mb-1.5 line-clamp-2">
+              <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-snug mb-1">
                 {featuredSuggestion.title}
               </h3>
-              <p className="text-slate-500 mb-4 md:mb-5 line-clamp-2 sm:line-clamp-3 max-w-xl text-xs sm:text-sm leading-relaxed">
-                {((featuredSuggestion as Book & { description?: string }).description) || `Dive into this excellent book by ${featuredSuggestion.author}. Enhance your knowledge and explore new ideas curated specifically for your class.`}
+              <p className="text-xs text-slate-500 font-medium mb-3 sm:mb-4">
+                by {featuredSuggestion.author}
               </p>
-              <div className="mt-auto">
+              <div>
                 <button
                   onClick={() => onOpenBook(featuredSuggestion)}
-                  className="bg-primary hover:bg-primary-600 text-white px-5 sm:px-6 py-2 sm:py-2.5 rounded-full text-sm font-semibold transition-all shadow-md shadow-primary/20 flex items-center gap-1.5 mx-auto sm:mx-0 w-max hover:-translate-y-0.5"
+                  className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-xs font-semibold shadow-sm transition-all inline-flex items-center gap-1.5"
                 >
-                  <span className="material-symbols-outlined text-[18px]">menu_book</span>
+                  <span className="material-symbols-outlined text-[16px]">menu_book</span>
                   Start Reading
                 </button>
               </div>
@@ -367,23 +350,6 @@ export default function HomeDashboard({ userName = 'Reader', onOpenBook, searchQ
 
       {/* Browsing Sections */}
       <section className="flex flex-col gap-8 sm:gap-10 mt-2">
-        {/* Search Results Display */}
-        {isSearching && (
-          <div className="flex flex-col gap-3">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-                Search Results
-              </h3>
-            </div>
-            {filteredBooks.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6">
-                {filteredBooks.map((book) => <BookCard key={book.id} book={book} onClick={() => onOpenBook(book)} />)}
-              </div>
-            ) : (
-              <EmptyState message={`No books matching "${searchQuery}"`} subMessage="Try a different search term" icon="search_off" />
-            )}
-          </div>
-        )}
 
         {/* Normal Discover Display */}
         {!isSearching && (
@@ -430,20 +396,26 @@ export default function HomeDashboard({ userName = 'Reader', onOpenBook, searchQ
 // ============================================================================
 
 function BookCard({ book, onClick }: { book: Book, onClick: () => void }) {
+  const cover = resolveCoverUrl(book.coverUrl);
   return (
     <div onClick={onClick} className="group cursor-pointer">
-      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-[10px] bg-slate-50 mb-2 sm:mb-3 border border-slate-100 shadow-sm group-hover:shadow-md transition-all duration-300">
-        <div
-          className="w-full h-full bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-105"
-          style={book.coverUrl ? { backgroundImage: `url('${book.coverUrl}')` } : undefined}
-        >
-          {!book.coverUrl && (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="material-symbols-outlined text-4xl sm:text-5xl text-slate-300">auto_stories</span>
-            </div>
-          )}
-        </div>
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-slate-900/5 transition-colors duration-300"></div>
+      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-[10px] bg-slate-100 mb-2 sm:mb-3 border border-slate-100 shadow-sm group-hover:shadow-md transition-all duration-300 flex items-center justify-center">
+        {cover ? (
+          <img
+            src={cover}
+            alt={book.title}
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            loading="lazy"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-slate-100">
+            <span className="material-symbols-outlined text-4xl sm:text-5xl text-slate-300">auto_stories</span>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-slate-900/5 transition-colors duration-300 pointer-events-none"></div>
       </div>
       <h5 className="font-bold text-sm sm:text-[15px] text-slate-800 leading-tight mb-1 line-clamp-2">{book.title}</h5>
       <p className="text-[11px] sm:text-xs text-slate-500 truncate font-medium">{book.author}</p>

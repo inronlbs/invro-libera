@@ -15,6 +15,7 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
 import { getSettings, updateSettings as dbUpdateSettings } from '../db';
 import { performAutoUpdate, type CloudSyncResult } from '../services/githubPackSync';
+import { checkAppUpdate, downloadAndInstallAppUpdate, type AppUpdateInfo } from '../services/appUpdateService';
 import { isTauriEnvironment } from '../services/localAuth';
 
 // ============================================================================
@@ -33,14 +34,7 @@ interface SettingsState {
   highlightText: boolean;
 }
 
-interface LicenseStatus {
-  is_valid: boolean;
-  school_name?: string;
-  machine_guid: string;
-  expiry_date?: string;
-  days_remaining?: number;
-  message: string;
-}
+
 
 const DEFAULT_SETTINGS: SettingsState = {
   textSize: 'medium',
@@ -62,12 +56,6 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
 
-  // License state
-  const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
-  const [licenseInput, setLicenseInput] = useState('');
-  const [licenseError, setLicenseError] = useState<string | null>(null);
-  const [isActivating, setIsActivating] = useState(false);
-
   // Import state
   const [isImporting, setIsImporting] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
@@ -78,6 +66,42 @@ export default function SettingsPage() {
   const [downloadProgress, setDownloadProgress] = useState<{ downloaded: number; total: number; percent: number } | null>(null);
   const [syncPhase, setSyncPhase] = useState<string>('');
   const unlistenRef = useRef<UnlistenFn | null>(null);
+
+  // App Software Update state
+  const [appUpdateInfo, setAppUpdateInfo] = useState<AppUpdateInfo | null>(null);
+  const [isCheckingAppUpdate, setIsCheckingAppUpdate] = useState(false);
+  const [isInstallingAppUpdate, setIsInstallingAppUpdate] = useState(false);
+  const [appUpdateProgress, setAppUpdateProgress] = useState<{ downloaded: number; total: number; percent: number } | null>(null);
+
+  const handleCheckAppUpdate = async () => {
+    setIsCheckingAppUpdate(true);
+    setAppUpdateInfo(null);
+    try {
+      const info = await checkAppUpdate();
+      setAppUpdateInfo(info);
+    } finally {
+      setIsCheckingAppUpdate(false);
+    }
+  };
+
+  const handleInstallAppUpdate = async () => {
+    if (!appUpdateInfo?.updateObj) return;
+    setIsInstallingAppUpdate(true);
+    setAppUpdateProgress(null);
+    try {
+      await downloadAndInstallAppUpdate(appUpdateInfo.updateObj, (downloaded, total) => {
+        const percent = total > 0 ? Math.round((downloaded / total) * 100) : 0;
+        setAppUpdateProgress({ downloaded, total, percent });
+      });
+    } catch (err: any) {
+      setAppUpdateInfo({
+        available: false,
+        error: `Installation failed: ${err?.message || err?.toString()}`
+      });
+    } finally {
+      setIsInstallingAppUpdate(false);
+    }
+  };
 
   useEffect(() => {
     const loadAll = async () => {
@@ -98,16 +122,6 @@ export default function SettingsPage() {
           ttsSpeed: dbSettings.ttsRate ?? 1,
           ttsPitch: localParsed.ttsPitch ?? 1,
         });
-
-        // Load License Status if in Tauri
-        if (isTauriEnvironment()) {
-          try {
-            const status = await invoke<LicenseStatus>('get_license_status');
-            setLicenseStatus(status);
-          } catch (e) {
-            console.warn('[License] Failed to fetch status:', e);
-          }
-        }
       } catch (e) {
         console.error('[Settings] Failed to load settings:', e);
       }
@@ -147,24 +161,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleActivateLicense = async () => {
-    if (!licenseInput.trim()) return;
-    setIsActivating(true);
-    setLicenseError(null);
-    try {
-      const result = await invoke<LicenseStatus>('verify_standalone_license', { licenseKey: licenseInput.trim() });
-      setLicenseStatus(result);
-      if (!result.is_valid) {
-        setLicenseError(result.message);
-      } else {
-        setLicenseInput('');
-      }
-    } catch (e: any) {
-      setLicenseError(e.toString() || 'Failed to activate license key.');
-    } finally {
-      setIsActivating(false);
-    }
-  };
+
 
   const handleImportPack = async () => {
     if (!isTauriEnvironment()) {
@@ -250,81 +247,6 @@ export default function SettingsPage() {
   return (
     <div className="max-w-[800px] w-full mx-auto p-4 sm:p-6 lg:p-8 pb-12">
       <h2 className="text-3xl font-black tracking-tight text-slate-900 mb-8 px-2">Settings</h2>
-
-      {/* ═══ LICENSE & ACTIVATION ═══ */}
-      <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
-        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[20px]">vpn_key</span>
-          Invro Key Activation
-        </h3>
-
-        <div className="space-y-4">
-          {/* Machine Fingerprint */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Device Hardware Fingerprint</p>
-              <p className="text-sm font-mono font-bold text-slate-800">{licenseStatus?.machine_guid || 'Loading fingerprint...'}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                if (licenseStatus?.machine_guid) {
-                  navigator.clipboard.writeText(licenseStatus.machine_guid);
-                  alert('Hardware Fingerprint copied to clipboard!');
-                }
-              }}
-              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 transition shadow-xs"
-            >
-              Copy
-            </button>
-          </div>
-
-          {/* License Status Badge */}
-          <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50">
-            <div>
-              <p className="text-xs font-semibold text-slate-500">License Status</p>
-              <p className="text-base font-extrabold text-slate-900">
-                {licenseStatus?.is_valid ? (licenseStatus.school_name || 'Active License') : 'Unlicensed / Free Mode'}
-              </p>
-              {licenseStatus?.expiry_date && (
-                <p className="text-xs text-slate-500 mt-0.5">Expires: {licenseStatus.expiry_date}</p>
-              )}
-            </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-              licenseStatus?.is_valid 
-                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                : 'bg-amber-100 text-amber-800 border border-amber-300'
-            }`}>
-              {licenseStatus?.is_valid ? 'VALID LICENSE' : 'DEMO MODE'}
-            </span>
-          </div>
-
-          {/* Key Input */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Enter Invro License Key</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={licenseInput}
-                onChange={(e) => setLicenseInput(e.target.value)}
-                placeholder="Paste your Invro Key JSON or Activation Token..."
-                className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-              <button
-                type="button"
-                onClick={handleActivateLicense}
-                disabled={isActivating || !licenseInput.trim()}
-                className="px-5 py-2.5 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary/90 disabled:opacity-50 transition shadow-sm"
-              >
-                {isActivating ? 'Activating...' : 'Activate Key'}
-              </button>
-            </div>
-            {licenseError && (
-              <p className="text-xs font-medium text-red-600 mt-1.5">{licenseError}</p>
-            )}
-          </div>
-        </div>
-      </section>
 
       {/* ═══ IMPORT BOOK PACKAGES (.invronpack) ═══ */}
       <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
@@ -417,6 +339,72 @@ export default function SettingsPage() {
             <p className="font-bold">{syncResult.message}</p>
             {syncResult.summary && (syncResult.summary.added > 0 || syncResult.summary.updated > 0) && (
               <p className="text-[11px] opacity-80">Added: {syncResult.summary.added} | Updated: {syncResult.summary.updated} | Skipped: {syncResult.summary.skipped}</p>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* ═══ APPLICATION SOFTWARE UPDATES ═══ */}
+      <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
+        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[20px]">system_update</span>
+          App Software Updates
+        </h3>
+        <p className="text-xs text-slate-500 mb-4">
+          Keep Invro Libera Standalone up to date with the latest desktop software releases, security patches, and features directly from GitHub.
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+          <div>
+            <p className="text-sm font-bold text-slate-800">Installed Application Version</p>
+            <p className="text-xs text-slate-500 font-mono">v0.1.0 (Standalone Desktop Build)</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleCheckAppUpdate}
+            disabled={isCheckingAppUpdate || isInstallingAppUpdate}
+            className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-50"
+          >
+            <span className={`material-symbols-outlined text-[18px] ${isCheckingAppUpdate ? 'animate-spin' : ''}`}>update</span>
+            {isCheckingAppUpdate ? 'Checking Updates...' : 'Check for App Updates'}
+          </button>
+        </div>
+
+        {appUpdateInfo && (
+          <div className="mt-4 p-4 rounded-xl border border-slate-200 bg-white space-y-3 text-xs">
+            {appUpdateInfo.available ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-slate-900 text-sm">New Version Available: {appUpdateInfo.version}</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] uppercase">Ready</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed">{appUpdateInfo.notes}</p>
+                <button
+                  type="button"
+                  onClick={handleInstallAppUpdate}
+                  disabled={isInstallingAppUpdate}
+                  className="w-full py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-xs shadow-sm transition disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <span className={`material-symbols-outlined text-[18px] ${isInstallingAppUpdate ? 'animate-spin' : ''}`}>download</span>
+                  {isInstallingAppUpdate ? 'Downloading & Restarting Application...' : `Update Now to ${appUpdateInfo.version}`}
+                </button>
+              </div>
+            ) : appUpdateInfo.error ? (
+              <p className="font-medium text-amber-700">{appUpdateInfo.error}</p>
+            ) : (
+              <p className="font-semibold text-emerald-700">Your application is fully up to date!</p>
+            )}
+
+            {isInstallingAppUpdate && appUpdateProgress && (
+              <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                <div className="flex justify-between text-[11px] font-mono text-slate-600">
+                  <span>Downloading application patch...</span>
+                  <span>{(appUpdateProgress.downloaded / (1024 * 1024)).toFixed(1)} / {(appUpdateProgress.total / (1024 * 1024)).toFixed(1)} MB ({appUpdateProgress.percent}%)</span>
+                </div>
+                <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${appUpdateProgress.percent}%` }} />
+                </div>
+              </div>
             )}
           </div>
         )}

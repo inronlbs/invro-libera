@@ -97,7 +97,7 @@ function AppShell({
 
   return (
     <Suspense fallback={<RouteFallback message="Loading workspace..." />}>
-      <div className={`flex min-h-screen bg-background-light dark:bg-background-dark overflow-hidden ${isTauriEnvironment() ? 'pt-9' : ''}`}>
+      <div className="flex min-h-screen bg-background-light dark:bg-background-dark overflow-hidden">
         {!isReader && (
           <SidebarNew
             isCollapsed={false}

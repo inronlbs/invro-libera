@@ -116,11 +116,6 @@ export default function BookCard({ book, onOpen }: BookCardProps) {
 
         {/* Status Badges */}
         <div className="book-badges">
-          {book.downloadStatus === 'complete' && (
-            <span className="badge badge-offline" title="Available offline">
-              ✓ Offline
-            </span>
-          )}
           {hasTTS && (
             <span className="badge badge-audio" title="Audio available">
               🔊

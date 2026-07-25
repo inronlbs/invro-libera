@@ -252,18 +252,23 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
               onClick={() => onOpenBook(book)}
               className="group cursor-pointer"
             >
-              <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-slate-200 mb-2 sm:mb-3 shadow-sm group-hover:shadow-lg transition-all">
+              <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-slate-200 mb-2 sm:mb-3 shadow-sm group-hover:shadow-lg transition-all flex items-center justify-center">
                 {/* Cover Image */}
-                <div
-                  className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                  style={cover ? { backgroundImage: `url('${cover}')` } : undefined}
-                >
-                  {!cover && (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="material-symbols-outlined text-4xl sm:text-5xl text-slate-400">menu_book</span>
-                    </div>
-                  )}
-                </div>
+                {cover ? (
+                  <img
+                    src={cover}
+                    alt={book.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="material-symbols-outlined text-4xl sm:text-5xl text-slate-400">menu_book</span>
+                  </div>
+                )}
 
                 {/* Overlay on hover */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
@@ -282,13 +287,6 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
                     {favorites.has(book.id) ? 'favorite' : 'favorite_border'}
                   </span>
                 </button>
-
-                {/* Downloaded Badge */}
-                {(book.downloadStatus === 'complete' || book.isBundled) && (
-                  <div className="absolute top-2 left-2 size-5 sm:size-6 rounded-full bg-emerald-500 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[12px] sm:text-[14px] text-white">download_done</span>
-                  </div>
-                )}
               </div>
 
               {/* Book Info */}
@@ -309,14 +307,11 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
               className="flex items-center gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-xl border border-slate-100 hover:shadow-md transition cursor-pointer"
             >
               {/* Cover */}
-              <div
-                className="w-14 h-20 sm:w-16 sm:h-24 shrink-0 rounded-lg bg-cover bg-center bg-slate-200"
-                style={cover ? { backgroundImage: `url('${cover}')` } : undefined}
-              >
-                {!cover && (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-3xl text-slate-400">menu_book</span>
-                  </div>
+              <div className="w-14 h-20 sm:w-16 sm:h-24 shrink-0 rounded-lg overflow-hidden bg-slate-200 flex items-center justify-center">
+                {cover ? (
+                  <img src={cover} alt={book.title} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="material-symbols-outlined text-3xl text-slate-400">menu_book</span>
                 )}
               </div>
 
@@ -341,9 +336,6 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
                     {favorites.has(book.id) ? 'favorite' : 'favorite_border'}
                   </span>
                 </button>
-                {(book.downloadStatus === 'complete' || book.isBundled) && (
-                  <span className="material-symbols-outlined text-[20px] text-emerald-500">download_done</span>
-                )}
               </div>
             </div>
             );
