@@ -46,10 +46,6 @@ interface ExtendedSidebarProps extends SidebarProps {
 
 export default function SidebarNew({
   activePage,
-  userName = 'Reader',
-  userGrade = 'Grade 11',
-  userRoll = '',
-  userAvatar,
   isCollapsed = false,
 }: ExtendedSidebarProps) {
   const isTauri = isTauriEnvironment();
@@ -157,29 +153,6 @@ export default function SidebarNew({
           </div>
         )}
 
-        {/* User Profile */}
-        <div className="p-4 border-t border-slate-200">
-          <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
-            <div
-              className="size-10 rounded-full bg-cover bg-center bg-primary/20 shrink-0"
-              style={userAvatar ? { backgroundImage: `url('${userAvatar}')` } : undefined}
-            >
-              {!userAvatar && (
-                <div className="w-full h-full flex items-center justify-center text-primary font-bold">
-                  {userName.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-            {!isCollapsed && (
-              <div className="flex flex-col min-w-0">
-                <p className="text-sm font-semibold truncate text-slate-900">{userName}</p>
-                <p className="text-xs text-slate-500 truncate mt-0.5">
-                  {userRoll ? `Roll No. ${userRoll}` : userGrade}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
       </aside>
 
     </>

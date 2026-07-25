@@ -245,289 +245,280 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-[800px] w-full mx-auto p-4 sm:p-6 lg:p-8 pb-12">
-      <h2 className="text-3xl font-black tracking-tight text-slate-900 mb-8 px-2">Settings</h2>
+    <div className="max-w-[760px] w-full mx-auto p-4 sm:p-6 lg:p-8 pb-16">
+      {/* Header */}
+      <div className="mb-8">
+        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mb-1">Settings</h2>
+        <p className="text-xs sm:text-sm text-slate-500 font-medium">Manage your reader preferences, cloud library sync, and software updates.</p>
+      </div>
 
-      {/* ═══ IMPORT BOOK PACKAGES (.invronpack) ═══ */}
-      <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
-        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[20px]">archive</span>
-          Import Book Packages (.invronpack)
-        </h3>
-        <p className="text-xs text-slate-500 mb-4">
-          Import offline encrypted book packages exported from Invron Dev Studio directly into your local library database.
-        </p>
-
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-          <div>
-            <p className="text-sm font-bold text-slate-800">Select Package File</p>
-            <p className="text-xs text-slate-500">Supports .invronpack files containing encrypted PDFs & EPUBs</p>
+      <div className="flex flex-col gap-6">
+        {/* ═══ CLOUD & LIBRARY SYNC ═══ */}
+        <section className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/70 shadow-xs transition-all">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="size-8 rounded-lg bg-indigo-50 flex items-center justify-center text-primary shrink-0">
+              <span className="material-symbols-outlined text-[20px]">cloud_sync</span>
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Library & Cloud Sync</h3>
+              <p className="text-xs text-slate-500">Import .invronpack packages or sync from GitHub Cloud</p>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={handleImportPack}
-            disabled={isImporting}
-            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined text-[18px]">upload_file</span>
-            {isImporting ? 'Importing...' : 'Import .invronpack'}
-          </button>
-        </div>
 
-        {importMessage && (
-          <p className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-3">
-            {importMessage}
-          </p>
-        )}
-      </section>
+          <div className="flex flex-col gap-3">
+            {/* Sync Library Row */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-slate-50/70 rounded-xl border border-slate-100">
+              <div>
+                <p className="text-xs font-bold text-slate-800">GitHub Cloud Feed</p>
+                <p className="text-[11px] text-slate-500 font-mono">inronlbs/invro-libera-books</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloudSync}
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-xs font-bold shadow-xs transition disabled:opacity-50"
+              >
+                <span className={`material-symbols-outlined text-[16px] ${isSyncing ? 'animate-spin' : ''}`}>sync</span>
+                {isSyncing ? 'Syncing...' : 'Sync Catalog'}
+              </button>
+            </div>
 
-      {/* ═══ CLOUD LIBRARY SYNC ═══ */}
-      <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
-        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[20px]">cloud_sync</span>
-          Cloud Library Sync
-        </h3>
-        <p className="text-xs text-slate-500 mb-4">
-          Sync your book catalog and download missing content directly from the official Invro Libera cloud repository on GitHub.
-        </p>
+            {/* Sync Progress Bar */}
+            {isSyncing && (
+              <div className="space-y-1.5 px-1">
+                <div className="flex items-center justify-between text-[11px] text-slate-600">
+                  <span>{syncPhase || 'Preparing...'}</span>
+                  {downloadProgress && downloadProgress.total > 0 && (
+                    <span className="font-mono text-slate-500">
+                      {(downloadProgress.downloaded / (1024 * 1024)).toFixed(1)} / {(downloadProgress.total / (1024 * 1024)).toFixed(1)} MB ({downloadProgress.percent}%)
+                    </span>
+                  )}
+                </div>
+                <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-300"
+                    style={{ width: `${downloadProgress?.percent ?? 0}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-          <div>
-            <p className="text-sm font-bold text-slate-800">Official Catalog Feed</p>
-            <p className="text-xs text-slate-500 font-mono">inronlbs/invro-libera-books</p>
+            {syncResult && (
+              <div className={`p-3 rounded-lg border text-xs ${
+                syncResult.status === 'error'
+                  ? 'bg-red-50 border-red-200 text-red-800'
+                  : syncResult.status === 'updated'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-slate-100 border-slate-200 text-slate-800'
+              }`}>
+                <p className="font-semibold">{syncResult.message}</p>
+              </div>
+            )}
+
+            {/* Import Package File Row */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-slate-50/70 rounded-xl border border-slate-100">
+              <div>
+                <p className="text-xs font-bold text-slate-800">Local Book Package (.invronpack)</p>
+                <p className="text-[11px] text-slate-500">Import encrypted books directly into your library</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleImportPack}
+                disabled={isImporting}
+                className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold shadow-xs transition disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-[16px]">upload_file</span>
+                {isImporting ? 'Importing...' : 'Import Package'}
+              </button>
+            </div>
+
+            {importMessage && (
+              <p className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg p-2.5">
+                {importMessage}
+              </p>
+            )}
           </div>
-          <button
-            type="button"
-            onClick={handleCloudSync}
-            disabled={isSyncing}
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-50"
-          >
-            <span className={`material-symbols-outlined text-[18px] ${isSyncing ? 'animate-spin' : ''}`}>sync</span>
-            {isSyncing ? 'Syncing Catalog...' : 'Sync Library Now'}
-          </button>
-        </div>
+        </section>
 
-        {/* Download Progress Bar */}
-        {isSyncing && (
-          <div className="mt-4 space-y-2">
-            <div className="flex items-center justify-between text-xs text-slate-600">
-              <span className="font-medium">{syncPhase || 'Preparing...'}</span>
-              {downloadProgress && downloadProgress.total > 0 && (
-                <span className="font-mono text-slate-500">
-                  {(downloadProgress.downloaded / (1024 * 1024)).toFixed(1)} / {(downloadProgress.total / (1024 * 1024)).toFixed(1)} MB
-                  <span className="ml-2 font-bold text-primary">{downloadProgress.percent}%</span>
-                </span>
+        {/* ═══ APPLICATION UPDATES ═══ */}
+        <section className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/70 shadow-xs transition-all">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="size-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">system_update</span>
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Software Updates</h3>
+              <p className="text-xs text-slate-500">v0.1.0 • Standalone Desktop Application</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-slate-50/70 rounded-xl border border-slate-100">
+            <div>
+              <p className="text-xs font-bold text-slate-800">Check GitHub Releases</p>
+              <p className="text-[11px] text-slate-500">Verify if a newer software version is published</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleCheckAppUpdate}
+              disabled={isCheckingAppUpdate || isInstallingAppUpdate}
+              className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold shadow-xs transition disabled:opacity-50"
+            >
+              <span className={`material-symbols-outlined text-[16px] ${isCheckingAppUpdate ? 'animate-spin' : ''}`}>update</span>
+              {isCheckingAppUpdate ? 'Checking...' : 'Check Updates'}
+            </button>
+          </div>
+
+          {appUpdateInfo && (
+            <div className="mt-3 p-3.5 rounded-xl border border-slate-200 bg-white space-y-2.5 text-xs">
+              {appUpdateInfo.available ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-slate-900 text-sm">Update Available: {appUpdateInfo.version}</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] uppercase">New</span>
+                  </div>
+                  <p className="text-slate-600 text-xs">{appUpdateInfo.notes}</p>
+                  <button
+                    type="button"
+                    onClick={handleInstallAppUpdate}
+                    disabled={isInstallingAppUpdate}
+                    className="w-full py-2 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-xs shadow-xs transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    <span className={`material-symbols-outlined text-[16px] ${isInstallingAppUpdate ? 'animate-spin' : ''}`}>download</span>
+                    {isInstallingAppUpdate ? 'Installing Patch...' : `Update to ${appUpdateInfo.version}`}
+                  </button>
+                </div>
+              ) : appUpdateInfo.error ? (
+                <p className="font-medium text-amber-700">{appUpdateInfo.error}</p>
+              ) : (
+                <p className="font-medium text-emerald-700">{appUpdateInfo.notes || 'Your application is fully up to date!'}</p>
+              )}
+
+              {isInstallingAppUpdate && appUpdateProgress && (
+                <div className="space-y-1 pt-2 border-t border-slate-100">
+                  <div className="flex justify-between text-[10px] font-mono text-slate-500">
+                    <span>Downloading update...</span>
+                    <span>{appUpdateProgress.percent}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${appUpdateProgress.percent}%` }} />
+                  </div>
+                </div>
               )}
             </div>
-            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-300 ease-out"
-                style={{ width: `${downloadProgress?.percent ?? 0}%` }}
-              />
+          )}
+        </section>
+
+        {/* ═══ READER & TYPOGRAPHY ═══ */}
+        <section className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/70 shadow-xs transition-all">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="size-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">format_size</span>
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Reader Appearance</h3>
+              <p className="text-xs text-slate-500">Customize font family and default font size</p>
             </div>
           </div>
-        )}
 
-        {syncResult && (
-          <div className={`p-3.5 rounded-xl border text-xs mt-3.5 space-y-1 ${
-            syncResult.status === 'error'
-              ? 'bg-red-50 border-red-200 text-red-900'
-              : syncResult.status === 'updated'
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-              : 'bg-blue-50 border-blue-200 text-blue-900'
-          }`}>
-            <p className="font-bold">{syncResult.message}</p>
-            {syncResult.summary && (syncResult.summary.added > 0 || syncResult.summary.updated > 0) && (
-              <p className="text-[11px] opacity-80">Added: {syncResult.summary.added} | Updated: {syncResult.summary.updated} | Skipped: {syncResult.summary.skipped}</p>
-            )}
-          </div>
-        )}
-      </section>
-
-      {/* ═══ APPLICATION SOFTWARE UPDATES ═══ */}
-      <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
-        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[20px]">system_update</span>
-          App Software Updates
-        </h3>
-        <p className="text-xs text-slate-500 mb-4">
-          Keep Invro Libera Standalone up to date with the latest desktop software releases, security patches, and features directly from GitHub.
-        </p>
-
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-          <div>
-            <p className="text-sm font-bold text-slate-800">Installed Application Version</p>
-            <p className="text-xs text-slate-500 font-mono">v0.1.0 (Standalone Desktop Build)</p>
-          </div>
-          <button
-            type="button"
-            onClick={handleCheckAppUpdate}
-            disabled={isCheckingAppUpdate || isInstallingAppUpdate}
-            className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-50"
-          >
-            <span className={`material-symbols-outlined text-[18px] ${isCheckingAppUpdate ? 'animate-spin' : ''}`}>update</span>
-            {isCheckingAppUpdate ? 'Checking Updates...' : 'Check for App Updates'}
-          </button>
-        </div>
-
-        {appUpdateInfo && (
-          <div className="mt-4 p-4 rounded-xl border border-slate-200 bg-white space-y-3 text-xs">
-            {appUpdateInfo.available ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-slate-900 text-sm">New Version Available: {appUpdateInfo.version}</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] uppercase">Ready</span>
-                </div>
-                <p className="text-slate-600 leading-relaxed">{appUpdateInfo.notes}</p>
+          {/* Text Size */}
+          <div className="mb-4">
+            <label className="block text-xs font-semibold text-slate-700 mb-2">Default Font Size</label>
+            <div className="grid grid-cols-4 gap-2">
+              {(['small', 'medium', 'large', 'xl'] as const).map(size => (
                 <button
-                  type="button"
-                  onClick={handleInstallAppUpdate}
-                  disabled={isInstallingAppUpdate}
-                  className="w-full py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-xs shadow-sm transition disabled:opacity-50 flex items-center justify-center gap-2"
+                  key={size}
+                  onClick={() => updateSetting('textSize', size)}
+                  className={`py-2 rounded-xl border text-center transition ${
+                    settings.textSize === size
+                      ? 'border-primary bg-primary/10 text-primary font-bold shadow-2xs'
+                      : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
                 >
-                  <span className={`material-symbols-outlined text-[18px] ${isInstallingAppUpdate ? 'animate-spin' : ''}`}>download</span>
-                  {isInstallingAppUpdate ? 'Downloading & Restarting Application...' : `Update Now to ${appUpdateInfo.version}`}
+                  <span className="text-xs">
+                    {size.charAt(0).toUpperCase() + size.slice(1)}
+                  </span>
                 </button>
-              </div>
-            ) : appUpdateInfo.error ? (
-              <p className="font-medium text-amber-700">{appUpdateInfo.error}</p>
-            ) : (
-              <p className="font-semibold text-emerald-700">{appUpdateInfo.notes || 'Your application (v0.1.0) is fully up to date!'}</p>
-            )}
-
-            {isInstallingAppUpdate && appUpdateProgress && (
-              <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                <div className="flex justify-between text-[11px] font-mono text-slate-600">
-                  <span>Downloading application patch...</span>
-                  <span>{(appUpdateProgress.downloaded / (1024 * 1024)).toFixed(1)} / {(appUpdateProgress.total / (1024 * 1024)).toFixed(1)} MB ({appUpdateProgress.percent}%)</span>
-                </div>
-                <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${appUpdateProgress.percent}%` }} />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
-
-      {/* ═══ APPEARANCE ═══ */}
-      <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
-        <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[20px]">palette</span>
-          Appearance & Reader Typography
-        </h3>
-
-        {/* Text Size */}
-        <div className="mb-5">
-          <label className="block text-sm font-medium text-slate-700 mb-2">Text Size</label>
-          <div className="grid grid-cols-4 gap-2">
-            {(['small', 'medium', 'large', 'xl'] as const).map(size => (
-              <button
-                key={size}
-                onClick={() => updateSetting('textSize', size)}
-                className={`py-2.5 rounded-xl border-2 text-center transition ${
-                  settings.textSize === size
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                }`}
-              >
-                <span className={`font-medium ${size === 'small' ? 'text-xs' : size === 'medium' ? 'text-sm' : size === 'large' ? 'text-base' : 'text-lg'}`}>
-                  {size.charAt(0).toUpperCase() + size.slice(1)}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Font Family */}
-        <div className="mb-5">
-          <label className="block text-sm font-medium text-slate-700 mb-2">Font Family</label>
-          <div className="grid grid-cols-3 gap-2">
-            {([{ id: 'sans', label: 'Sans', cls: 'font-sans' }, { id: 'serif', label: 'Serif', cls: 'font-serif' }, { id: 'mono', label: 'Mono', cls: 'font-mono' }] as const).map(f => (
-              <button
-                key={f.id}
-                onClick={() => updateSetting('fontFamily', f.id)}
-                className={`flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition ${
-                  settings.fontFamily === f.id
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                }`}
-              >
-                <span className={`text-xl font-bold ${f.cls}`}>Aa</span>
-                <span className="text-xs font-medium">{f.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ AUDIO & TTS ═══ */}
-      <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
-        <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[20px]">record_voice_over</span>
-          TTS & AI Voice
-        </h3>
-
-        {/* TTS Toggle */}
-        <div className="flex items-center justify-between py-3 border-b border-slate-100">
-          <div>
-            <p className="font-medium text-sm text-slate-900">Enable AI Voice Read-Aloud</p>
-            <p className="text-xs text-slate-500">Read books aloud using natural neural voice engines</p>
-          </div>
-          <button
-            onClick={() => updateSetting('ttsEnabled', !settings.ttsEnabled)}
-            className={`relative w-14 h-8 rounded-full transition-colors ${settings.ttsEnabled ? 'bg-primary' : 'bg-slate-300'}`}
-          >
-            <span className={`absolute top-1 size-6 bg-white rounded-full shadow transition-transform ${settings.ttsEnabled ? 'left-7' : 'left-1'}`}></span>
-          </button>
-        </div>
-
-        {settings.ttsEnabled && (
-          <>
-            <div className="py-3 border-b border-slate-100">
-              <label className="block text-xs font-medium text-slate-700 mb-2">Voice</label>
-              <select
-                value={settings.ttsVoice}
-                onChange={(e) => updateSetting('ttsVoice', e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-700"
-              >
-                <option value="">Auto (System Default)</option>
-                {availableVoices.map(voice => (
-                  <option key={voice.name} value={voice.name}>{voice.name.replace('Microsoft ', '').replace(' Desktop', '')} ({voice.lang})</option>
-                ))}
-              </select>
+              ))}
             </div>
+          </div>
 
-            <div className="pt-4">
-              <button onClick={testTTS} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 transition shadow-sm">
-                <span className="material-symbols-outlined text-[18px]">play_arrow</span>
+          {/* Font Family */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-2">Font Family</label>
+            <div className="grid grid-cols-3 gap-2">
+              {([{ id: 'sans', label: 'Sans-Serif', cls: 'font-sans' }, { id: 'serif', label: 'Serif', cls: 'font-serif' }, { id: 'mono', label: 'Monospace', cls: 'font-mono' }] as const).map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => updateSetting('fontFamily', f.id)}
+                  className={`flex flex-col items-center justify-center py-2.5 rounded-xl border transition ${
+                    settings.fontFamily === f.id
+                      ? 'border-primary bg-primary/10 text-primary font-bold shadow-2xs'
+                      : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className={`text-base ${f.cls}`}>Aa</span>
+                  <span className="text-[11px] font-medium">{f.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ TTS & READ-ALOUD ═══ */}
+        <section className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/70 shadow-xs transition-all">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="size-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                <span className="material-symbols-outlined text-[20px]">volume_up</span>
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">TTS & Read-Aloud</h3>
+                <p className="text-xs text-slate-500">Read books aloud with speech engine</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => updateSetting('ttsEnabled', !settings.ttsEnabled)}
+              className={`relative w-12 h-6 rounded-full transition-colors ${settings.ttsEnabled ? 'bg-primary' : 'bg-slate-300'}`}
+            >
+              <span className={`absolute top-0.5 size-5 bg-white rounded-full shadow transition-transform ${settings.ttsEnabled ? 'left-6.5' : 'left-0.5'}`} />
+            </button>
+          </div>
+
+          {settings.ttsEnabled && (
+            <div className="mt-4 pt-3 border-t border-slate-100 space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Voice Engine</label>
+                <select
+                  value={settings.ttsVoice}
+                  onChange={(e) => updateSetting('ttsVoice', e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800"
+                >
+                  <option value="">System Default</option>
+                  {availableVoices.map(voice => (
+                    <option key={voice.name} value={voice.name}>{voice.name.replace('Microsoft ', '').replace(' Desktop', '')} ({voice.lang})</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                onClick={testTTS}
+                className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-900 transition shadow-2xs"
+              >
+                <span className="material-symbols-outlined text-[16px]">play_arrow</span>
                 Test Voice
               </button>
             </div>
-          </>
-        )}
-      </section>
+          )}
+        </section>
 
-      {/* ═══ ABOUT ═══ */}
-      <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
-        <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[20px]">info</span>
-          About Invro Libera
-        </h3>
-
-        <div className="space-y-4">
-          <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-            <img src="/favicon.png" alt="Invro Libera" className="h-12 w-12 object-contain" />
-            <div>
-              <p className="font-extrabold text-slate-900">Invro Libera Standalone</p>
-              <p className="text-xs text-slate-500">v1.0.2 • Offline E-Library & Encrypted Book Reader</p>
-            </div>
-          </div>
-          <p className="text-xs text-slate-400 pt-2">
-            Built by Invron Labs • © 2026 All rights reserved.
-          </p>
+        {/* ═══ ABOUT FOOTER ═══ */}
+        <div className="text-center pt-4 text-xs text-slate-400">
+          <p className="font-semibold text-slate-500">Invro Libera Standalone v0.1.0</p>
+          <p>© 2026 Invron Labs • All rights reserved.</p>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
