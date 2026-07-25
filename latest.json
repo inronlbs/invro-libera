@@ -5,7 +5,7 @@
   "platforms": {
     "windows-x86_64": {
       "signature": "",
-      "url": "https://github.com/inronlbs/invro-libera/releases/download/v1.3.0-standalone/Invro.Libera_0.1.0_x64-setup.exe"
+      "url": "https://github.com/inronlbs/invro-libera/releases/download/v1.3.0-standalone/Invro.Libera.Standalone_1.3.0_x64-setup.exe"
     }
   }
 }
