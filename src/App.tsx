@@ -363,15 +363,29 @@ function App() {
     }
 
     try {
-      // For EPUBs in Tauri: use pre-unpacked directory serving to bypass JSZip
-      if (book.type === 'epub' && isTauriEnvironment()) {
-        const streamUrl = await invoke<string>('prepare_epub_streaming', { bookId: book.id });
-        const fullUrl = `http://${host}:${port}${streamUrl}/`;
-        console.log(`[Reader] EPUB directory URL: ${fullUrl}`);
-        return fullUrl;
+      // 1. Check local blob in IndexedDB
+      if (book.blob && book.blob.size > 0) {
+        const buf = await book.blob.arrayBuffer();
+        if (book.type === 'pdf') {
+          const blob = new Blob([buf], { type: 'application/pdf' });
+          return URL.createObjectURL(blob);
+        }
+        return buf;
       }
 
-      // For PDFs and non-Tauri EPUBs: download the decrypted binary directly
+      // 2. For EPUBs in Tauri: use pre-unpacked directory streaming
+      if (book.type === 'epub' && isTauriEnvironment()) {
+        try {
+          const streamUrl = await invoke<string>('prepare_epub_streaming', { bookId: book.id });
+          const fullUrl = `http://${host}:${port}${streamUrl}/`;
+          console.log(`[Reader] EPUB directory URL: ${fullUrl}`);
+          return fullUrl;
+        } catch (e) {
+          console.warn('[Reader] EPUB directory streaming fallback:', e);
+        }
+      }
+
+      // 3. Download from local Axum server API
       const url = `http://${host}:${port}/api/books/${book.id}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -383,7 +397,6 @@ function App() {
         return URL.createObjectURL(blob);
       }
       
-      // For non-Tauri EPUBs (Chrome clients) — return raw ArrayBuffer
       return buf;
     } catch (e) {
       console.error('[Reader] resolveBookUrl failed:', e);

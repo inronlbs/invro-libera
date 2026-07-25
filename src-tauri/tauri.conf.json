@@ -1,18 +1,18 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Invro Libera",
+  "productName": "Invro Libera Standalone",
   "version": "0.1.0",
   "identifier": "com.invronlabs.elibrary.standalone",
   "build": {
     "frontendDist": "../dist",
-    "devUrl": "http://localhost:5173",
+    "devUrl": "http://localhost:5174",
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
   },
   "app": {
     "windows": [
       {
-        "title": "Invro Libera",
+        "title": "Invro Libera Standalone",
         "decorations": false,
         "width": 1100,
         "height": 750,
