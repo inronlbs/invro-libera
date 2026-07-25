@@ -10,6 +10,8 @@ import db, { type Book, requestPersistentStorage, updateLastReadAt } from './db'
 import { getClientSession, setClientSession, logoutClientSession, isTauriEnvironment, type StudentProfile } from './services/localAuth';
 import { syncOnLaunch } from './services/catalogSync';
 import { checkLicense, type LicenseData } from './services/licenseService';
+import { listenForRemoteDownloadTriggers } from './services/telemetryService';
+import { ClassSessionBanner } from './components/common/ClassSessionBanner';
 import { invoke } from '@tauri-apps/api/core';
 
 const SetupWizard = lazy(() => import('./components/SetupWizard'));
@@ -326,6 +328,12 @@ function App() {
     void autoSync();
     // Subsequent syncs every 30 seconds
     const intervalId = setInterval(autoSync, 30_000);
+
+    // Listen for teacher-triggered remote downloads
+    listenForRemoteDownloadTriggers(() => {
+      void autoSync();
+    });
+
     return () => clearInterval(intervalId);
   }, [student]);
 
@@ -483,6 +491,7 @@ function App() {
       <Routes>
         <Route path="*" element={
           <div className="min-h-screen bg-background-light">
+            <ClassSessionBanner onSessionJoined={handleStudentLogin} />
             <Routes>
               <Route element={
                 <AppShell

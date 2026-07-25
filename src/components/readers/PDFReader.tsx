@@ -15,6 +15,7 @@ import {
   getSettings,
   type Book
 } from '../../db';
+import { startTelemetryPing, stopTelemetryPing } from '../../services/telemetryService';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
@@ -125,6 +126,19 @@ export default function PDFReader({ book, fileUrl, onClose }: PDFReaderProps) {
       ttsMessageTimerRef.current = null;
     }, 2800);
   }, []);
+
+  // Telemetry tracking during PDF reading
+  useEffect(() => {
+    if (book && currentPage > 0) {
+      startTelemetryPing(
+        book.id,
+        book.title,
+        () => currentPage,
+        () => numPages
+      );
+    }
+    return () => stopTelemetryPing();
+  }, [book, currentPage, numPages]);
 
   // ==========================================================================
   // PDF DOCUMENT HANDLERS

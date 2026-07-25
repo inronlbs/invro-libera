@@ -2,6 +2,7 @@ pub mod books;
 pub mod state;
 pub mod audit;
 pub mod tts;
+pub mod telemetry;
 
 use tauri::Manager;
 use tauri::image::Image;
@@ -80,6 +81,9 @@ pub fn run() {
         tts::check_natural_voices,
         tts::unlock_natural_voices,
         tts::open_narrator_settings,
+        telemetry::discover_teacher_host,
+        telemetry::send_telemetry_ping,
+        telemetry::trigger_remote_download,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

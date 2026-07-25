@@ -10,6 +10,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { ttsEngine } from '../../services/ttsEngine';
 import { updateProgress, getProgress, isTTSEnabled, getSettings, type Book } from '../../db';
 import { isTauriEnvironment } from '../../services/localAuth';
+import { startTelemetryPing, stopTelemetryPing } from '../../services/telemetryService';
 
 // ============================================================================
 // TYPES
@@ -158,6 +159,19 @@ export default function EPUBReader({ book, fileUrl, onClose }: EPUBReaderProps) 
     });
     return () => cancelAnimationFrame(raf);
   }, []);
+
+  // Telemetry tracking during EPUB reading
+  useEffect(() => {
+    if (book) {
+      startTelemetryPing(
+        book.id,
+        book.title,
+        () => progress,
+        () => 100
+      );
+    }
+    return () => stopTelemetryPing();
+  }, [book, progress]);
 
   useEffect(() => {
     if (!ttsEnabledForBook) return;
