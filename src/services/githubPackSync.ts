@@ -7,8 +7,11 @@ const ENCRYPTION_KEY = new TextEncoder().encode("InvronLabSecureKey2024!!_32byte
 const NONCE_SIZE = 12;
 
 export interface GithubVersionManifest {
-  version: string;
-  pack_url: string;
+  version?: string;
+  latest_version?: string;
+  pack_url?: string;
+  download_url?: string;
+  pack_name?: string;
 }
 
 export interface SyncSummary {
@@ -198,28 +201,44 @@ export async function performAutoUpdate(versionUrl?: string): Promise<CloudSyncR
     console.log(`[AutoUpdate] Checking ${targetUrl}... Current version: ${currentVersion || 'none'}`);
     const manifest = await checkGithubForUpdate(targetUrl);
     
-    if (!manifest || !manifest.pack_url || !manifest.version) {
+    if (!manifest) {
       return {
         success: false,
         status: 'error',
         message: 'Could not fetch catalog feed from GitHub manifest. Check network connection.'
       };
     }
-    
-    if (manifest.version === currentVersion) {
+
+    const version = manifest.version || manifest.latest_version;
+    let packUrl = manifest.pack_url || manifest.download_url;
+
+    if (!version) {
+      return {
+        success: false,
+        status: 'error',
+        message: 'Invalid manifest format: missing version.'
+      };
+    }
+
+    if (!packUrl || packUrl.trim() === '') {
+      const packName = manifest.pack_name || 'initial_catalog.invronpack';
+      packUrl = `https://github.com/inronlbs/invro-libera-books/releases/download/v1.0.0-books/${packName}`;
+    }
+
+    if (version === currentVersion) {
       console.log("[AutoUpdate] Already up to date.");
       return {
         success: true,
         status: 'already_up_to_date',
-        version: manifest.version,
+        version: version,
         summary: { added: 0, updated: 0, skipped: 0 },
-        message: `Library is already up to date (Version ${manifest.version}).`
+        message: `Library is already up to date (Version ${version}).`
       };
     }
     
-    console.log(`[AutoUpdate] New version ${manifest.version} found. Downloading...`);
-    const packRes = await fetch(manifest.pack_url);
-    if (!packRes.ok) throw new Error(`HTTP ${packRes.status} downloading package from ${manifest.pack_url}`);
+    console.log(`[AutoUpdate] New version ${version} found. Downloading from ${packUrl}...`);
+    const packRes = await fetch(packUrl);
+    if (!packRes.ok) throw new Error(`HTTP ${packRes.status} downloading package from ${packUrl}`);
     
     const buffer = await packRes.arrayBuffer();
     console.log(`[AutoUpdate] Downloaded ${buffer.byteLength} bytes. Importing...`);
@@ -227,15 +246,15 @@ export async function performAutoUpdate(versionUrl?: string): Promise<CloudSyncR
     const summary = await importInvronPackData(buffer);
     
     // Store new version
-    await updateSettings({ lastImportedVersion: manifest.version });
+    await updateSettings({ lastImportedVersion: version });
     console.log(`[AutoUpdate] Complete. Added: ${summary.added}, Updated: ${summary.updated}`);
     
     return {
       success: true,
       status: 'updated',
-      version: manifest.version,
+      version: version,
       summary,
-      message: `Successfully synced version ${manifest.version}! Added ${summary.added} new book(s).`
+      message: `Successfully synced version ${version}! Added ${summary.added} new book(s).`
     };
   } catch (err: any) {
     console.error(`[AutoUpdate] Error during update flow:`, err);
