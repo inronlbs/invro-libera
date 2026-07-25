@@ -624,3 +624,37 @@ pub async fn update_book(
 
     Ok(updated_entry)
 }
+
+/// Fetch cloud manifest JSON via Rust reqwest to bypass webview CORS/network restrictions
+#[tauri::command]
+pub async fn fetch_cloud_manifest(url: String) -> Result<String, String> {
+    let client = reqwest::Client::builder()
+        .user_agent("InvroLibera/1.0")
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let res = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    if !res.status().is_success() {
+        return Err(format!("HTTP request failed with status {}", res.status()));
+    }
+
+    let text = res.text().await.map_err(|e| e.to_string())?;
+    Ok(text)
+}
+
+/// Download cloud pack bytes via Rust reqwest to bypass webview CORS/network restrictions
+#[tauri::command]
+pub async fn download_cloud_pack(url: String) -> Result<Vec<u8>, String> {
+    let client = reqwest::Client::builder()
+        .user_agent("InvroLibera/1.0")
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let res = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    if !res.status().is_success() {
+        return Err(format!("HTTP request failed with status {}", res.status()));
+    }
+
+    let bytes = res.bytes().await.map_err(|e| e.to_string())?;
+    Ok(bytes.to_vec())
+}

@@ -77,6 +77,8 @@ pub fn run() {
         books::delete_book,
         books::update_book,
         books::clear_catalog,
+        books::fetch_cloud_manifest,
+        books::download_cloud_pack,
         audit::get_audit_logs,
         audit::log_frontend_event,
         tts::check_natural_voices,

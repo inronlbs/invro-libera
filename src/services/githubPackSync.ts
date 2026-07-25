@@ -1,6 +1,8 @@
 import { unzip } from 'fflate';
+import { invoke } from '@tauri-apps/api/core';
 import db, { type Book } from '../db';
 import { getSettings, updateSettings } from '../db';
+import { isTauriEnvironment } from './localAuth';
 
 // AES-GCM Key (must match packager.rs)
 const ENCRYPTION_KEY = new TextEncoder().encode("InvronLabSecureKey2024!!_32bytes");
@@ -90,9 +92,15 @@ function unzipBuffer(buffer: ArrayBuffer): Promise<Record<string, Uint8Array>> {
  */
 export async function checkGithubForUpdate(versionUrl: string): Promise<GithubVersionManifest | null> {
   try {
-    const res = await fetch(versionUrl, { cache: 'no-store' });
-    if (!res.ok) return null;
-    return await res.json() as GithubVersionManifest;
+    let jsonText: string;
+    if (isTauriEnvironment()) {
+      jsonText = await invoke<string>('fetch_cloud_manifest', { url: versionUrl });
+    } else {
+      const res = await fetch(versionUrl, { cache: 'no-store' });
+      if (!res.ok) return null;
+      jsonText = await res.text();
+    }
+    return JSON.parse(jsonText) as GithubVersionManifest;
   } catch (e) {
     console.error("Failed to fetch version manifest", e);
     return null;
@@ -237,10 +245,15 @@ export async function performAutoUpdate(versionUrl?: string): Promise<CloudSyncR
     }
     
     console.log(`[AutoUpdate] New version ${version} found. Downloading from ${packUrl}...`);
-    const packRes = await fetch(packUrl);
-    if (!packRes.ok) throw new Error(`HTTP ${packRes.status} downloading package from ${packUrl}`);
-    
-    const buffer = await packRes.arrayBuffer();
+    let buffer: ArrayBuffer;
+    if (isTauriEnvironment()) {
+      const bytes = await invoke<number[]>('download_cloud_pack', { url: packUrl });
+      buffer = new Uint8Array(bytes).buffer;
+    } else {
+      const packRes = await fetch(packUrl);
+      if (!packRes.ok) throw new Error(`HTTP ${packRes.status} downloading package from ${packUrl}`);
+      buffer = await packRes.arrayBuffer();
+    }
     console.log(`[AutoUpdate] Downloaded ${buffer.byteLength} bytes. Importing...`);
     
     const summary = await importInvronPackData(buffer);
