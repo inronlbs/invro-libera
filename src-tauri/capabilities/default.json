@@ -23,6 +23,14 @@
     "fs:allow-exists",
     "fs:allow-mkdir",
     "fs:allow-remove",
-    "fs:allow-rename"
+    "fs:allow-rename",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        { "path": "$TEMP/**" },
+        { "path": "$APPDATA/**" },
+        { "path": "$DOCUMENT/**" }
+      ]
+    }
   ]
 }

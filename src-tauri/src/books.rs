@@ -642,11 +642,13 @@ pub async fn fetch_cloud_manifest(url: String) -> Result<String, String> {
     Ok(text)
 }
 
-/// Download cloud pack bytes with streaming progress events
+/// Download cloud pack to a temp file with streaming progress events.
+/// Returns the temp file path (avoids serializing 220MB as JSON array).
 #[tauri::command]
-pub async fn download_cloud_pack(app: tauri::AppHandle, url: String) -> Result<Vec<u8>, String> {
+pub async fn download_cloud_pack(app: tauri::AppHandle, url: String) -> Result<String, String> {
     use tauri::Emitter;
     use futures_util::StreamExt;
+    use tokio::io::AsyncWriteExt;
 
     let client = reqwest::Client::builder()
         .user_agent("InvroLibera/1.0")
@@ -660,8 +662,12 @@ pub async fn download_cloud_pack(app: tauri::AppHandle, url: String) -> Result<V
 
     let total_size = res.content_length().unwrap_or(0);
     let mut downloaded: u64 = 0;
-    let mut buffer = Vec::with_capacity(total_size as usize);
     let mut stream = res.bytes_stream();
+
+    // Create temp file
+    let temp_dir = std::env::temp_dir();
+    let temp_path = temp_dir.join(format!("invro_cloud_pack_{}.invronpack", uuid::Uuid::new_v4()));
+    let mut file = tokio::fs::File::create(&temp_path).await.map_err(|e| e.to_string())?;
 
     // Emit initial progress
     let _ = app.emit("cloud-download-progress", serde_json::json!({
@@ -673,7 +679,7 @@ pub async fn download_cloud_pack(app: tauri::AppHandle, url: String) -> Result<V
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.map_err(|e| e.to_string())?;
         downloaded += chunk.len() as u64;
-        buffer.extend_from_slice(&chunk);
+        file.write_all(&chunk).await.map_err(|e| e.to_string())?;
 
         let percent = if total_size > 0 {
             ((downloaded as f64 / total_size as f64) * 100.0) as u8
@@ -691,6 +697,8 @@ pub async fn download_cloud_pack(app: tauri::AppHandle, url: String) -> Result<V
         }
     }
 
+    file.flush().await.map_err(|e| e.to_string())?;
+
     // Emit 100% completion
     let _ = app.emit("cloud-download-progress", serde_json::json!({
         "downloaded": total_size,
@@ -698,5 +706,5 @@ pub async fn download_cloud_pack(app: tauri::AppHandle, url: String) -> Result<V
         "percent": 100u8
     }));
 
-    Ok(buffer)
+    Ok(temp_path.to_string_lossy().to_string())
 }

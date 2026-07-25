@@ -1,5 +1,6 @@
 import { unzip } from 'fflate';
 import { invoke } from '@tauri-apps/api/core';
+import { readFile, remove } from '@tauri-apps/plugin-fs';
 import db, { type Book } from '../db';
 import { getSettings, updateSettings } from '../db';
 
@@ -272,10 +273,16 @@ export async function performAutoUpdate(versionUrl?: string): Promise<CloudSyncR
     }
     
     console.log(`[AutoUpdate] New version ${version} found. Downloading from ${packUrl}...`);
-    const bytes = await invoke<number[]>('download_cloud_pack', { url: packUrl });
-    const buffer = new Uint8Array(bytes).buffer;
-    console.log(`[AutoUpdate] Downloaded ${buffer.byteLength} bytes via Rust.`);
-    console.log(`[AutoUpdate] Downloaded ${buffer.byteLength} bytes. Importing...`);
+    const tempPath = await invoke<string>('download_cloud_pack', { url: packUrl });
+    console.log(`[AutoUpdate] Downloaded to temp file: ${tempPath}. Reading...`);
+    
+    // Read the temp file as binary using Tauri fs plugin (avoids JSON serialization of 220M bytes)
+    const fileBytes = await readFile(tempPath);
+    const buffer = fileBytes.buffer.slice(fileBytes.byteOffset, fileBytes.byteOffset + fileBytes.byteLength) as ArrayBuffer;
+    console.log(`[AutoUpdate] Read ${buffer.byteLength} bytes from temp file. Importing...`);
+    
+    // Clean up temp file
+    try { await remove(tempPath); } catch { /* ignore cleanup errors */ }
     
     const summary = await importInvronPackData(buffer);
     
