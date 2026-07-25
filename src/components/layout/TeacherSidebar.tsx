@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 export type TeacherNavItem = 'dashboard' | 'classes' | 'library' | 'settings';
 
 const navItems: { id: TeacherNavItem; label: string; icon: string; path: string }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'space_dashboard', path: '/teacher/dashboard' },
+  { id: 'dashboard', label: 'Dashboard', icon: 'space_dashboard', path: '/teacher' },
   { id: 'classes',   label: 'Classes',   icon: 'school',          path: '/teacher/classes' },
   { id: 'library',   label: 'Library',   icon: 'menu_book',       path: '/teacher/library' },
   { id: 'settings',  label: 'Settings',  icon: 'settings',        path: '/teacher/settings' },

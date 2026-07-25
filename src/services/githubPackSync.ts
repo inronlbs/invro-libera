@@ -183,7 +183,7 @@ export async function performAutoUpdate(versionUrl: string | undefined): Promise
   if (!versionUrl) return null;
   
   const settings = await getSettings();
-  const currentVersion = (settings as any).lastImportedVersion;
+  const currentVersion = settings.lastImportedVersion;
   
   console.log(`[AutoUpdate] Checking ${versionUrl}... Current version: ${currentVersion || 'none'}`);
   const manifest = await checkGithubForUpdate(versionUrl);
@@ -210,7 +210,7 @@ export async function performAutoUpdate(versionUrl: string | undefined): Promise
     const summary = await importInvronPackData(buffer);
     
     // Store new version
-    await updateSettings({ lastImportedVersion: manifest.version } as any);
+    await updateSettings({ lastImportedVersion: manifest.version });
     console.log(`[AutoUpdate] Complete. Added: ${summary.added}, Updated: ${summary.updated}`);
     
     return summary;

@@ -415,15 +415,15 @@ pub async fn add_class_division(state: tauri::State<'_, AppState>, class_id: Str
 pub async fn generate_students_block(state: tauri::State<'_, AppState>, class_id: String, division_name: String, start_roll: u32, end_roll: u32) -> Result<(), String> {
     let mut app_data = state.data.write().await;
     
-    let mut grade_str = String::new();
-    if let Some(class_info) = app_data.classes.iter().find(|c| c.id == class_id) {
-        if !class_info.divisions.iter().any(|d| d.name == division_name) {
-            return Err("Division not found".to_string());
+    let grade_str = match app_data.classes.iter().find(|c| c.id == class_id) {
+        Some(class_info) => {
+            if !class_info.divisions.iter().any(|d| d.name == division_name) {
+                return Err("Division not found".to_string());
+            }
+            class_info.grade.clone()
         }
-        grade_str = class_info.grade.clone();
-    } else {
-        return Err("Class not found".to_string());
-    }
+        None => return Err("Class not found".to_string()),
+    };
 
     let class_id_str = format!("{} {}", grade_str, division_name);
 

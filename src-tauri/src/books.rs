@@ -2,11 +2,7 @@ use aes_gcm::{
     aead::{Aead, KeyInit, OsRng},
     Aes256Gcm, Nonce,
 };
-use axum::{
-    extract::{Path, State},
-    http::{header, StatusCode},
-    response::IntoResponse,
-};
+
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -221,7 +217,6 @@ pub async fn import_books_from_directory(
     state: tauri::State<'_, crate::state::AppState>,
     dir_path: String,
 ) -> Result<Vec<BookEntry>, String> {
-    use std::io::Read;
     let source_dir = std::path::Path::new(&dir_path);
     if !source_dir.is_dir() {
         return Err("Not a valid directory".to_string());
@@ -307,7 +302,8 @@ pub async fn import_books_from_directory(
             if let Some(ref num_prefix) = prefix_number {
                 if let Some(cover_path) = covers_map.get(num_prefix) {
                     if let Ok(bytes) = std::fs::read(cover_path) {
-                        let mime = mime_guess::from_path(cover_path).first_or_octet_stream();
+                        let ext = cover_path.extension().and_then(|e| e.to_str()).unwrap_or("png").to_lowercase();
+                        let mime = if ext == "jpg" || ext == "jpeg" { "image/jpeg" } else if ext == "webp" { "image/webp" } else { "image/png" };
                         use base64::{engine::general_purpose, Engine as _};
                         let b64 = general_purpose::STANDARD.encode(&bytes);
                         cover_image_base64 = Some(format!("data:{};base64,{}", mime, b64));
@@ -627,55 +623,4 @@ pub async fn update_book(
     save_catalog(app_dir, &catalog).await;
 
     Ok(updated_entry)
-}
-
-// ============================================================================
-// AXUM HANDLER — Secure Book Streaming
-// ============================================================================
-
-/// Axum handler that decrypts a book in RAM and streams it to the Chrome client.
-/// URL: GET /api/books/:book_id
-pub async fn stream_book_handler(
-    State(app_state): State<crate::state::AppState>,
-    Path(book_id): Path<String>,
-) -> impl IntoResponse {
-    let app_dir = app_state
-        .data_file_path
-        .parent()
-        .unwrap_or(std::path::Path::new("."));
-
-    let catalog = load_catalog(app_dir).await;
-
-    let Some(entry) = catalog.books.iter().find(|b| b.id == book_id) else {
-        return (StatusCode::NOT_FOUND, "Book not found").into_response();
-    };
-
-    let secure_dir = books_dir(app_dir);
-    let encrypted_path = secure_dir.join(&entry.encrypted_filename);
-
-    let encrypted_data = match fs::read(&encrypted_path).await {
-        Ok(data) => data,
-        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to read book file").into_response(),
-    };
-
-    let decrypted = match decrypt_bytes(&encrypted_data) {
-        Ok(data) => data,
-        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Decryption failed").into_response(),
-    };
-
-    let content_type = match entry.book_type.as_str() {
-        "pdf" => "application/pdf",
-        "epub" => "application/epub+zip",
-        _ => "application/octet-stream",
-    };
-
-    (
-        StatusCode::OK,
-        [
-            (header::CONTENT_TYPE, content_type),
-            (header::CACHE_CONTROL, "no-store"),
-        ],
-        decrypted,
-    )
-        .into_response()
 }

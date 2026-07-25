@@ -9,17 +9,23 @@ interface UpdateNotificationToastProps {
 export default function UpdateNotificationToast({ summary, onDismiss }: UpdateNotificationToastProps) {
   const [isVisible, setIsVisible] = useState(false);
 
+  const [prevSummary, setPrevSummary] = useState(summary);
+  if (prevSummary !== summary) {
+    setPrevSummary(summary);
+    if (!summary) setIsVisible(false);
+  }
+
   useEffect(() => {
-    if (summary) {
-      setIsVisible(true);
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        setTimeout(onDismiss, 300); // Wait for transition
-      }, 8000); // 8 seconds
-      return () => clearTimeout(timer);
-    } else {
+    if (!summary) return;
+    const showTimer = setTimeout(() => setIsVisible(true), 0);
+    const dismissTimer = setTimeout(() => {
       setIsVisible(false);
-    }
+      setTimeout(onDismiss, 300); // Wait for transition
+    }, 8000); // 8 seconds
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(dismissTimer);
+    };
   }, [summary, onDismiss]);
 
   if (!summary) return null;

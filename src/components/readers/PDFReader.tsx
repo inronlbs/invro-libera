@@ -6,7 +6,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { ttsEngine } from '../../services/ttsEngine';
-import { Window } from '@tauri-apps/api/window';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { isTauriEnvironment } from '../../services/localAuth';
 import {
   updateProgress,
@@ -112,7 +112,7 @@ export default function PDFReader({ book, fileUrl, onClose }: PDFReaderProps) {
 
   // Window management state
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const appWindow = isTauriEnvironment() ? Window.getCurrent() : null;
+  const appWindow = isTauriEnvironment() ? getCurrentWindow() : null;
 
 
   const showTtsFeedback = useCallback((message: string) => {

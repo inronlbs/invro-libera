@@ -37,8 +37,9 @@ export default function SetupWizard({ onActivated, expiredLicense }: SetupWizard
 
       setLicenseData(data);
       setStep('confirm');
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to read key file');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrorMsg(msg || 'Failed to read key file');
       setStep('error');
     }
   }, []);
@@ -49,8 +50,9 @@ export default function SetupWizard({ onActivated, expiredLicense }: SetupWizard
     try {
       await activateLicense(licenseData);
       onActivated();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Activation failed');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrorMsg(msg || 'Activation failed');
       setStep('error');
     } finally {
       setActivating(false);

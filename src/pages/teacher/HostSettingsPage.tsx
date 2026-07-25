@@ -21,6 +21,14 @@ interface AuditLogEntry {
   details: string;
 }
 
+interface LicenseInfo {
+  key?: string;
+  school?: string;
+  lab?: string;
+  device?: string;
+  expiresAt?: string;
+}
+
 // ============================================================================
 // COMPONENT
 // ============================================================================
@@ -28,30 +36,35 @@ interface AuditLogEntry {
 export default function HostSettingsPage() {
   const [activeTab, setActiveTab] = useState<TabId>('main');
 
-  // School Details state
-  const [schoolName, setSchoolName] = useState('');
-  const [labDetails, setLabDetails] = useState('');
-  const [labIncharge, setLabIncharge] = useState('');
-  const [isSavingSchool, setIsSavingSchool] = useState(false);
-
-  // Import Pack state
-  const [isImporting, setIsImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{added: number, updated: number, skipped: number} | null>(null);
-  const [importError, setImportError] = useState<string | null>(null);
-  const [importFileName, setImportFileName] = useState<string | null>(null);
-
-  // Audit Logs state
-  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
-  const [logsLoading, setLogsLoading] = useState(false);
-  const [auditSearch, setAuditSearch] = useState('');
-  const [auditFilter, setAuditFilter] = useState('ALL');
-
   // Server Info
   const [localIp, setLocalIp] = useState('127.0.0.1');
   const [naturalVoiceStatus, setNaturalVoiceStatus] = useState<'checking' | 'not_installed' | 'installed_hidden' | 'unlocked' | 'not_windows'>('not_windows');
 
   // License Info
-  const [licenseData, setLicenseData] = useState<any>(null);
+  const [licenseData, setLicenseData] = useState<LicenseInfo | null>(null);
+
+  // School Details
+  const [schoolName, setSchoolName] = useState('');
+  const [labDetails, setLabDetails] = useState('');
+  const [labIncharge, setLabIncharge] = useState('');
+  const [isSavingSchool, setIsSavingSchool] = useState(false);
+
+  // Import Pack
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ added: number; updated: number; skipped: number } | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importFileName, setImportFileName] = useState('');
+
+  // Audit Logs
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [auditSearch, setAuditSearch] = useState('');
+  const [auditFilter, setAuditFilter] = useState('ALL');
+
+  // Clear Data
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
+  const [clearType, setClearType] = useState<'roster' | 'catalog' | 'license' | 'all' | null>(null);
+  const [clearConfirmText, setClearConfirmText] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -116,8 +129,8 @@ export default function HostSettingsPage() {
       const checkVoices = async () => {
         try {
           setNaturalVoiceStatus('checking');
-          const status = await invoke<string>('check_natural_voices');
-          setNaturalVoiceStatus(status as any);
+          const status = await invoke<'checking' | 'not_installed' | 'installed_hidden' | 'unlocked' | 'not_windows'>('check_natural_voices');
+          setNaturalVoiceStatus(status);
         } catch (e) {
           console.error('[HostSettings] natural voices check failed:', e);
           setNaturalVoiceStatus('not_windows');
@@ -169,7 +182,7 @@ export default function HostSettingsPage() {
           licenseLab: undefined,
           licenseDeviceId: undefined,
           licenseExpiresAt: undefined,
-        } as any);
+        });
         
         try {
           await invoke('log_frontend_event', {
@@ -210,7 +223,10 @@ export default function HostSettingsPage() {
     try {
       const selectedPath = await open({
         multiple: false,
-        filters: [{ name: 'Invron Pack', extensions: ['invronpack'] }]
+        filters: [
+          { name: 'All Files', extensions: ['*'] },
+          { name: 'Invron Pack', extensions: ['invronpack'] }
+        ]
       });
 
       if (!selectedPath) return;
@@ -233,9 +249,10 @@ export default function HostSettingsPage() {
 
       // Also clear the data-cleared flag since we're importing new data
       localStorage.removeItem('invro-data-cleared');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Import] Failed:', err);
-      setImportError(err.message || String(err) || 'Failed to import pack file.');
+      const msg = err instanceof Error ? err.message : String(err);
+      setImportError(msg || 'Failed to import pack file.');
     } finally {
       setIsImporting(false);
     }
@@ -244,11 +261,6 @@ export default function HostSettingsPage() {
   // ============================================================================
   // RENDER HELPERS
   // ============================================================================
-
-                {/* Clear Data state */}
-  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
-  const [clearType, setClearType] = useState<'roster' | 'catalog' | 'license' | 'all' | null>(null);
-  const [clearConfirmText, setClearConfirmText] = useState('');
 
   const renderHeader = (title: string, icon: string) => (
     <div className="flex items-center gap-3 mb-8">

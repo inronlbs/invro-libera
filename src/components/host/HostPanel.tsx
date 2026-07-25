@@ -120,7 +120,7 @@ export default function HostPanel() {
       for (const file of Array.from(files)) {
         // Use the webkitRelativePath or name as a path hint
         // The actual import is handled by the Rust backend via file path
-        const entry = await invoke<BookEntry>('import_book', { filePath: (file as any).path || file.name });
+        const entry = await invoke<BookEntry>('import_book', { filePath: (file as File & { path?: string }).path || file.name });
         setBooks(prev => [...prev, entry]);
       }
     } catch (error) {

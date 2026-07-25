@@ -75,7 +75,7 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
       const userClass = session?.classId;
 
       const rawBooks = await db.books.toArray();
-      const allBooks = rawBooks.filter((book: any) => {
+      const allBooks = rawBooks.filter((book: Book & { hidden?: boolean; assigned_class?: string }) => {
           if (book.hidden) return false;
           if (book.assigned_class && book.assigned_class.trim() !== '') {
               if (book.assigned_class !== userClass) return false;
@@ -83,7 +83,7 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
           return true;
       });
 
-      const displayBooks: DisplayBook[] = allBooks.map((book: any) => ({
+      const displayBooks: DisplayBook[] = allBooks.map((book: Book) => ({
         ...book,
         isFavorite: false // Default, can be loaded from localStorage or db
       }));

@@ -13,8 +13,10 @@ export interface TeacherOutletContext {
   searchQuery: string;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTeacherOutletContext() {
-  return useOutletContext<TeacherOutletContext>();
+  const ctx = useOutletContext<TeacherOutletContext>();
+  return ctx || { searchQuery: '' };
 }
 
 function RouteFallback({ message = 'Loading workspace...' }: { message?: string }) {
@@ -38,12 +40,13 @@ export default function TeacherAppShell() {
   const [updateSummary, setUpdateSummary] = useState<SyncSummary | null>(null);
   const checkInterval = useRef<number | null>(null);
 
-  // Clear search when navigating away from library
-  useEffect(() => {
+  const [prevActivePage, setPrevActivePage] = useState(activePage);
+  if (prevActivePage !== activePage) {
+    setPrevActivePage(activePage);
     if (activePage !== 'library') {
       setSearchQuery('');
     }
-  }, [activePage]);
+  }
 
   useEffect(() => {
     let mounted = true;

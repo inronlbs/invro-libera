@@ -60,7 +60,7 @@ export default function HomeDashboard({ userName = 'Reader', onOpenBook, searchQ
       const userClass = session?.classId;
 
       const rawBooks = await db.books.toArray();
-      const visibleBooks = rawBooks.filter((book: any) => {
+      const visibleBooks = rawBooks.filter((book: Book & { hidden?: boolean; assigned_class?: string }) => {
           if (book.hidden) return false;
           if (book.assigned_class && book.assigned_class.trim() !== '') {
               if (book.assigned_class !== userClass) return false;
@@ -342,7 +342,7 @@ export default function HomeDashboard({ userName = 'Reader', onOpenBook, searchQ
                 {featuredSuggestion.title}
               </h3>
               <p className="text-slate-500 mb-4 md:mb-5 line-clamp-2 sm:line-clamp-3 max-w-xl text-xs sm:text-sm leading-relaxed">
-                {((featuredSuggestion as any).description) || `Dive into this excellent book by ${featuredSuggestion.author}. Enhance your knowledge and explore new ideas curated specifically for your class.`}
+                {((featuredSuggestion as Book & { description?: string }).description) || `Dive into this excellent book by ${featuredSuggestion.author}. Enhance your knowledge and explore new ideas curated specifically for your class.`}
               </p>
               <div className="mt-auto">
                 <button

@@ -34,14 +34,13 @@ if (typeof window !== 'undefined') {
 export function usePwaInstall() {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(globalDeferredPrompt);
     const [isInstallable, setIsInstallable] = useState(globalIsInstallable);
-    const [isInstalled, setIsInstalled] = useState(false);
+    const [isInstalled, setIsInstalled] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        const nav = navigator as Navigator & { standalone?: boolean };
+        return window.matchMedia('(display-mode: standalone)').matches || Boolean(nav.standalone);
+    });
 
     useEffect(() => {
-        // Check if the app is already installed/running in standalone mode
-        if (window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && (navigator as any).standalone)) {
-            setIsInstalled(true);
-        }
-
         const handleReady = () => {
             setDeferredPrompt(globalDeferredPrompt);
             setIsInstallable(globalIsInstallable);

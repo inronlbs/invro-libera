@@ -17,14 +17,20 @@ interface BookEntry {
   hidden: boolean;
 }
 
+const coverCache = new Map<string, string>();
+
 const BookCover = ({ book, className = '' }: { book: BookEntry, className?: string }) => {
-  const [cover, setCover] = useState<string | null>(null);
+  const [cover, setCover] = useState<string | null>(() => coverCache.get(book.id) || null);
 
   useEffect(() => {
+    if (coverCache.has(book.id)) return;
     let mounted = true;
     invoke<string | null>('get_book_cover', { bookId: book.id })
       .then(res => {
-        if (mounted && res) setCover(res);
+        if (res) {
+          coverCache.set(book.id, res);
+          if (mounted) setCover(res);
+        }
       })
       .catch(console.error);
     return () => { mounted = false; };

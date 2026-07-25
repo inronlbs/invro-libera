@@ -53,7 +53,7 @@ export default function StudentLogin({ onLogin }: StudentLoginProps) {
     } finally {
       setLoading(false);
     }
-  }, [host]);
+  }, [host, port]);
 
   useEffect(() => {
     void fetchSession();

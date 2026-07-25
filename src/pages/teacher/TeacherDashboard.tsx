@@ -88,15 +88,16 @@ export default function TeacherDashboard() {
     }
   };
 
-  const uniqueClasses = Array.from(new Set(students.map(s => String(s.classId)))).sort();
+  const uniqueClasses = Array.from(new Set(students.map(s => String(s.classId || '')))).filter(Boolean).sort();
   const activeStudents = activeClass ? students.filter(s => s.classId === activeClass) : [];
 
   const classGroups = useMemo(() => {
     const groups: Record<string, string[]> = {};
     uniqueClasses.forEach(cls => {
+      if (!cls || cls === 'undefined' || cls === 'null') return;
       const parts = cls.split(' ');
-      const grade = parts[0];
-      const div = parts.slice(1).join(' ');
+      const grade = parts[0] || 'General';
+      const div = parts.slice(1).join(' ') || 'Main';
       if (!groups[grade]) groups[grade] = [];
       groups[grade].push(div);
     });

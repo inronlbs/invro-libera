@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::io::Write;
-use std::path::PathBuf;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuditLogEntry {

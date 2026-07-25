@@ -36,7 +36,7 @@ class GlobalErrorBoundary extends Component<{ children: ReactNode }, { hasError:
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(_: Error) {
+  static getDerivedStateFromError() {
     return { hasError: true };
   }
 
@@ -134,6 +134,7 @@ function ReaderRoute({ resolveBookUrl }: { resolveBookUrl: (book: Book) => Promi
   const [fileUrl, setFileUrl] = useState<string | ArrayBuffer | null>(null);
 
   useEffect(() => {
+    let activeUrl: string | null = null;
     const loadBook = async () => {
       if (!bookId) return;
       const found = await db.books.get(bookId);
@@ -142,11 +143,21 @@ function ReaderRoute({ resolveBookUrl }: { resolveBookUrl: (book: Book) => Promi
       const resolved = await resolveBookUrl(found);
       if (!resolved) return;
 
+      if (typeof resolved === 'string' && resolved.startsWith('blob:')) {
+        activeUrl = resolved;
+      }
+
       await updateLastReadAt(found.id);
       setBook({ ...found, lastReadAt: new Date(), updatedAt: new Date() });
       setFileUrl(resolved);
     };
     loadBook();
+
+    return () => {
+      if (activeUrl) {
+        URL.revokeObjectURL(activeUrl);
+      }
+    };
   }, [bookId, resolveBookUrl]);
 
   const handleClose = useCallback(() => {
@@ -272,7 +283,7 @@ function App() {
                     setStudent(null);
                 }
             }
-        } catch (e) {
+        } catch {
             // Server offline is handled on the login page retry loop,
             // we don't strictly auto-logout on network error to prevent dropping offline work unexpectedly.
         }
@@ -296,7 +307,7 @@ function App() {
         document.removeEventListener('visibilitychange', onVisibilityChange);
         window.removeEventListener('focus', onVisibilityChange);
     };
-  }, [student, window.location.pathname]);
+  }, [student]);
 
   // Background Library Sync for Clients
   useEffect(() => {
@@ -426,6 +437,11 @@ function App() {
                 <TeacherDashboard />
               </Suspense>
             } />
+            <Route path="dashboard" element={
+              <Suspense fallback={<RouteFallback message="Loading Dashboard..." />}>
+                <TeacherDashboard />
+              </Suspense>
+            } />
             <Route path="classes" element={
               <Suspense fallback={<RouteFallback message="Loading Classes..." />}>
                 <TeacherClasses />
@@ -449,8 +465,10 @@ function App() {
     );
   }
 
-  // Student must explicitly log in
-  if (!student) {
+  // Student login check (In standalone desktop mode, default to Standalone Reader if no session)
+  const activeStudent = student || (isTauriEnvironment() ? { id: 'STANDALONE_GUEST', name: 'Reader', classId: 'STANDALONE', rollNumber: '0' } : null);
+
+  if (!activeStudent) {
     return (
       <GlobalErrorBoundary>
         <Suspense fallback={<RouteFallback message="Loading Login..." />}>
@@ -468,7 +486,7 @@ function App() {
             <Routes>
               <Route element={
                 <AppShell
-                  student={student}
+                  student={activeStudent}
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
                   handleOpenBook={handleOpenBook}

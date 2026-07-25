@@ -7,12 +7,24 @@ export interface CatalogSyncResult {
   fetchedCount: number;
 }
 
+interface RemoteBookEntry {
+  id: string;
+  title: string;
+  author?: string;
+  type?: string;
+  original_filename?: string;
+  cover_image_base64?: string;
+  category?: string;
+  assigned_class?: string;
+  file_size?: number;
+}
+
 export async function syncCatalogForUser(): Promise<CatalogSyncResult> {
   try {
-    let catalog: any[];
+    let catalog: RemoteBookEntry[];
 
     if (isTauriEnvironment()) {
-      catalog = await invoke('get_book_catalog');
+      catalog = await invoke<RemoteBookEntry[]>('get_book_catalog');
     } else {
       const host = window.location.hostname === 'tauri.localhost' || window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
       // Fetch the catalog from the Axum HTTP server running on the Host PC
@@ -31,7 +43,7 @@ export async function syncCatalogForUser(): Promise<CatalogSyncResult> {
       type: entry.type === 'pdf' ? 'pdf' : 'epub',
       language: 'en',
       isBundled: false,
-      fileName: entry.original_filename,
+      fileName: entry.original_filename || '',
       coverUrl: entry.cover_image_base64 || '',
       fileUrl: '',
       downloadStatus: 'pending',
@@ -95,18 +107,21 @@ export function formatCatalogSyncError(error: unknown): string {
  * Enforces a 3-second timeout so it doesn't hang if the host is offline.
  */
 export async function syncOnLaunch(): Promise<void> {
+  let timerId: ReturnType<typeof setTimeout> | undefined;
   try {
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Sync timeout')), 3000)
-    );
+    const timeoutPromise = new Promise((_, reject) => {
+      timerId = setTimeout(() => reject(new Error('Sync timeout')), 3000);
+    });
     
     await Promise.race([
       syncCatalogForUser(),
       timeoutPromise
     ]);
     console.log('[AutoSync] Incremental catalog sync completed');
-  } catch (err) {
+  } catch {
     // Silently ignore: it just means host is offline or not reachable
     console.log('[AutoSync] Skipped - Host unreachable or timeout');
+  } finally {
+    if (timerId) clearTimeout(timerId);
   }
 }

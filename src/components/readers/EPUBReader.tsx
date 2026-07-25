@@ -674,7 +674,7 @@ export default function EPUBReader({ book, fileUrl, onClose }: EPUBReaderProps) 
     });
 
     // Get spine count for quality threshold
-    const spineObj = book.spine as any;
+    const spineObj = book.spine as unknown as { spineItems?: Array<{ href?: string }>; items?: Array<{ href?: string }> };
     const spineItems = spineObj?.spineItems ?? spineObj?.items ?? [];
     const spineCount = spineItems.length;
 
@@ -693,7 +693,7 @@ export default function EPUBReader({ book, fileUrl, onClose }: EPUBReaderProps) 
 
     // Generate simple structural "Parts" navigation based on physical spine items
     if (spineItems.length > 0) {
-      const structuralToc: NavItem[] = spineItems.map((item: any, idx: number) => {
+      const structuralToc: NavItem[] = spineItems.map((item: { href?: string }, idx: number) => {
         // Try to extract a clean name from the filename, otherwise fallback to "Part X"
         const href = item.href || '';
         const filename = href.split('/').pop()?.split('.')[0] || '';
@@ -709,7 +709,7 @@ export default function EPUBReader({ book, fileUrl, onClose }: EPUBReaderProps) 
           href: href,
           label: label,
           level: 0
-        } as any;
+        };
       });
 
       setToc(structuralToc);
@@ -975,9 +975,9 @@ export default function EPUBReader({ book, fileUrl, onClose }: EPUBReaderProps) 
     }
   };
 
-  const renderTocItem = (item: any) => {
-    // If the item has our injected custom level, use it to calculate padding indentation.
-    const lvl = typeof item.level === 'number' ? item.level : 0;
+  const renderTocItem = (item: NavItem) => {
+    const itemWithLevel = item as NavItem & { level?: number };
+    const lvl = typeof itemWithLevel.level === 'number' ? itemWithLevel.level : 0;
     const paddingLeft = lvl > 0 ? `${(lvl) * 1.5}rem` : '0rem';
     // Constrain extreme depths
     const boundedPl = lvl > 4 ? '6rem' : paddingLeft;

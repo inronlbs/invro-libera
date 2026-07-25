@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Invro Libera",
   "version": "0.1.0",
-  "identifier": "com.invronlabs.elibrary.host",
+  "identifier": "com.invronlabs.elibrary.standalone",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -28,6 +28,11 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "windows": {
+      "webviewInstallMode": {
+        "type": "offlineInstaller"
+      }
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

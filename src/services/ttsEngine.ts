@@ -406,7 +406,7 @@ export class TTSEngine {
     text = text.replace(/[\u2013\u2014\u2015]/g, ', ');         // Em/en dashes → comma pause
 
     // 10. Remove zero-width & invisible Unicode characters
-    text = text.replace(/[\u200B\u200C\u200D\uFEFF\u00AD]/g, '');
+    text = text.replace(/\u200B|\u200C|\u200D|\uFEFF|\u00AD/g, '');
 
     // 11. Collapse excessive whitespace and newlines  
     text = text.replace(/\n{3,}/g, '\n\n');

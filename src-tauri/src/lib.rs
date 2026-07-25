@@ -1,10 +1,10 @@
 pub mod books;
-pub mod server;
 pub mod state;
 pub mod audit;
 pub mod tts;
 
 use tauri::Manager;
+use tauri::image::Image;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -19,15 +19,20 @@ pub fn run() {
             .build(),
         )?;
       }
+
+      // Set the window icon explicitly so it shows in the taskbar (dev + release)
+      if let Some(window) = app.get_webview_window("main") {
+        let icon_bytes = include_bytes!("../icons/icon.png");
+        if let Ok(icon) = Image::from_bytes(icon_bytes) {
+          let _ = window.set_icon(icon);
+        }
+      }
       
       let app_dir = app.path().app_data_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
       
       tauri::async_runtime::block_on(async move {
           let app_state = state::AppState::new(app_dir).await;
           app.manage(app_state.clone());
-          
-          // Start the local Axum HTTP server to serve the NComputing Chrome clients
-          server::start(app_state);
       });
 
       Ok(())

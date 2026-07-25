@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { StudentProfile } from '../../services/localAuth';
 
@@ -57,7 +57,7 @@ export default function TeacherClasses() {
   const [editingStudent, setEditingStudent] = useState<StudentProfile | null>(null);
   const [editForm, setEditForm] = useState({ name: '' });
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [loadedClasses, loadedStudents] = await Promise.all([
@@ -67,22 +67,26 @@ export default function TeacherClasses() {
       setClasses(loadedClasses);
       setStudents(loadedStudents);
       
-      // Update selected references if applicable
-      if (selectedClass) {
-        const updated = loadedClasses.find(c => c.id === selectedClass.id);
-        if (updated) setSelectedClass(updated);
-        else { setSelectedClass(null); setSelectedDivision(null); }
-      }
+      // Update selected references safely without creating an effect loop
+      setSelectedClass(prev => {
+        if (!prev) return null;
+        const updated = loadedClasses.find(c => c.id === prev.id);
+        if (!updated) {
+          setSelectedDivision(null);
+          return null;
+        }
+        return updated;
+      });
     } catch (e) {
       console.error("Failed to load data", e);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [loadData]);
 
   // --- CRUD Handlers ---
 
@@ -97,8 +101,9 @@ export default function TeacherClasses() {
       });
       await loadData();
       setShowCreateModal(false);
-    } catch (error: any) {
-      alert(`Failed to create class: ${error}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      alert(`Failed to create class: ${msg}`);
     }
   };
 
@@ -109,7 +114,8 @@ export default function TeacherClasses() {
       await invoke('rename_class', { classId: showEditClassModal.id, newGrade: editGrade });
       await loadData();
       setShowEditClassModal(null);
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       alert("Failed to rename class.");
     }
   };
@@ -121,7 +127,8 @@ export default function TeacherClasses() {
       await loadData();
       setSelectedClass(null);
       setSelectedDivision(null);
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       alert("Failed to delete class.");
     }
   };
@@ -138,8 +145,9 @@ export default function TeacherClasses() {
       });
       await loadData();
       setShowAddDivModal(null);
-    } catch (error: any) {
-      alert(`Failed to add division: ${error}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      alert(`Failed to add division: ${msg}`);
     }
   };
 
@@ -152,7 +160,8 @@ export default function TeacherClasses() {
         setSelectedDivision(null);
         setSelectedStudent(null);
       }
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       alert("Failed to delete division.");
     }
   };
@@ -169,7 +178,8 @@ export default function TeacherClasses() {
       });
       await loadData();
       setShowAddStudentModal(null);
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       alert("Failed to add student.");
     }
   };
@@ -186,8 +196,9 @@ export default function TeacherClasses() {
       });
       await loadData();
       setShowGenBlockModal(null);
-    } catch (error: any) {
-      alert(`Failed to generate block: ${error}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      alert(`Failed to generate block: ${msg}`);
     }
   };
 
@@ -200,7 +211,8 @@ export default function TeacherClasses() {
       await loadData();
       setEditingStudent(null);
       if (selectedStudent?.id === editingStudent.id) setSelectedStudent(updated);
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       alert("Failed to update student.");
     }
   };
@@ -212,7 +224,8 @@ export default function TeacherClasses() {
       await loadData();
       setEditingStudent(null);
       if (selectedStudent?.id === studentId) setSelectedStudent(null);
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       alert("Failed to delete student.");
     }
   };
