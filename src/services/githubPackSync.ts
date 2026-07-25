@@ -2,7 +2,6 @@ import { unzip } from 'fflate';
 import { invoke } from '@tauri-apps/api/core';
 import db, { type Book } from '../db';
 import { getSettings, updateSettings } from '../db';
-import { isTauriEnvironment } from './localAuth';
 
 // AES-GCM Key (must match packager.rs)
 const ENCRYPTION_KEY = new TextEncoder().encode("InvronLabSecureKey2024!!_32bytes");
@@ -91,19 +90,35 @@ function unzipBuffer(buffer: ArrayBuffer): Promise<Record<string, Uint8Array>> {
  * Check GitHub for a new version manifest.
  */
 export async function checkGithubForUpdate(versionUrl: string): Promise<GithubVersionManifest | null> {
+  let jsonText: string | null = null;
+
+  // 1. Try Rust reqwest command first (CORS-free, bypasses webview restrictions)
   try {
-    let jsonText: string;
-    if (isTauriEnvironment()) {
-      jsonText = await invoke<string>('fetch_cloud_manifest', { url: versionUrl });
-    } else {
+    jsonText = await invoke<string>('fetch_cloud_manifest', { url: versionUrl });
+    console.log(`[CloudSync] Rust fetch_cloud_manifest succeeded.`);
+  } catch (rustErr) {
+    console.warn(`[CloudSync] Rust invoke fetch_cloud_manifest unavailable or failed:`, rustErr);
+  }
+
+  // 2. Fallback to JS fetch if Rust invoke was not used or failed
+  if (!jsonText) {
+    try {
       const res = await fetch(versionUrl, { cache: 'no-store' });
-      if (!res.ok) return null;
-      jsonText = await res.text();
+      if (res.ok) {
+        jsonText = await res.text();
+      } else {
+        throw new Error(`HTTP status ${res.status}`);
+      }
+    } catch (fetchErr: any) {
+      console.error(`[CloudSync] JS fetch also failed:`, fetchErr);
+      throw new Error(`Network request failed: ${fetchErr.message || fetchErr.toString()}`);
     }
+  }
+
+  try {
     return JSON.parse(jsonText) as GithubVersionManifest;
-  } catch (e) {
-    console.error("Failed to fetch version manifest", e);
-    return null;
+  } catch (parseErr) {
+    throw new Error("Failed to parse manifest JSON.");
   }
 }
 
@@ -245,11 +260,13 @@ export async function performAutoUpdate(versionUrl?: string): Promise<CloudSyncR
     }
     
     console.log(`[AutoUpdate] New version ${version} found. Downloading from ${packUrl}...`);
-    let buffer: ArrayBuffer;
-    if (isTauriEnvironment()) {
+    let buffer: ArrayBuffer | null = null;
+    try {
       const bytes = await invoke<number[]>('download_cloud_pack', { url: packUrl });
       buffer = new Uint8Array(bytes).buffer;
-    } else {
+      console.log(`[AutoUpdate] Rust download_cloud_pack downloaded ${buffer.byteLength} bytes.`);
+    } catch (rustErr) {
+      console.warn(`[AutoUpdate] Rust download_cloud_pack failed (${rustErr}), falling back to JS fetch...`);
       const packRes = await fetch(packUrl);
       if (!packRes.ok) throw new Error(`HTTP ${packRes.status} downloading package from ${packUrl}`);
       buffer = await packRes.arrayBuffer();
