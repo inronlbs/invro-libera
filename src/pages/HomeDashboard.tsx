@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo } from 'react';
 import db, { type Book, type ReadingProgress } from '../db';
 import HorizontalScroll from '../components/common/HorizontalScroll';
 import { getClientSession } from '../services/localAuth';
+import { resolveCoverUrl } from '../services/githubPackSync';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -277,7 +278,9 @@ export default function HomeDashboard({ userName = 'Reader', onOpenBook, searchQ
             <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Continue Reading</h3>
           </div>
           <HorizontalScroll className="flex gap-4 sm:gap-6 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-            {filteredRecentBooks.map((book) => (
+            {filteredRecentBooks.map((book) => {
+              const cover = resolveCoverUrl(book.coverUrl);
+              return (
               <div
                 key={book.id}
                 onClick={() => onOpenBook(book)}
@@ -285,9 +288,9 @@ export default function HomeDashboard({ userName = 'Reader', onOpenBook, searchQ
               >
                 <div
                   className="w-20 sm:w-24 h-28 sm:h-36 shrink-0 rounded-lg bg-cover bg-center shadow-sm bg-slate-200"
-                  style={book.coverUrl ? { backgroundImage: `url('${book.coverUrl}')` } : undefined}
+                  style={cover ? { backgroundImage: `url('${cover}')` } : undefined}
                 >
-                  {!book.coverUrl && (
+                  {!cover && (
                     <div className="w-full h-full flex items-center justify-center">
                       <span className="material-symbols-outlined text-3xl sm:text-4xl text-slate-400">menu_book</span>
                     </div>
@@ -314,20 +317,23 @@ export default function HomeDashboard({ userName = 'Reader', onOpenBook, searchQ
                   </div>
                 </div>
               </div>
-            ))}
+            );
+          })}
           </HorizontalScroll>
         </section>
       )}
 
       {/* Featured Suggestion Hero (Minimal & Airy) */}
-      {!isSearching && featuredSuggestion && (
+      {!isSearching && featuredSuggestion && (() => {
+        const featuredCover = resolveCoverUrl(featuredSuggestion.coverUrl);
+        return (
         <section className="relative overflow-hidden rounded-[14px] bg-indigo-50/40 border border-indigo-100 shadow-sm transition-all hover:shadow-md hover:bg-indigo-50/70">
           <div className="relative p-4 sm:p-5 md:p-6 flex flex-col sm:flex-row gap-4 md:gap-6 items-center sm:items-stretch">
             <div 
               className="w-24 sm:w-28 md:w-32 aspect-[2/3] shrink-0 rounded-lg shadow-xl shadow-slate-200/60 bg-white bg-cover bg-center border border-slate-100 transition-transform hover:scale-[1.02]"
-              style={featuredSuggestion.coverUrl ? { backgroundImage: `url('${featuredSuggestion.coverUrl}')` } : undefined}
+              style={featuredCover ? { backgroundImage: `url('${featuredCover}')` } : undefined}
             >
-              {!featuredSuggestion.coverUrl && (
+              {!featuredCover && (
                 <div className="w-full h-full flex items-center justify-center">
                   <span className="material-symbols-outlined text-3xl text-slate-300">import_contacts</span>
                 </div>
@@ -356,7 +362,8 @@ export default function HomeDashboard({ userName = 'Reader', onOpenBook, searchQ
             </div>
           </div>
         </section>
-      )}
+        );
+      })()}
 
       {/* Browsing Sections */}
       <section className="flex flex-col gap-8 sm:gap-10 mt-2">

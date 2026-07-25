@@ -88,6 +88,73 @@ function unzipBuffer(buffer: ArrayBuffer): Promise<Record<string, Uint8Array>> {
 }
 
 /**
+ * Format any raw base64 or Data URI string into a valid web-renderable Data URI
+ */
+export function resolveCoverUrl(coverStr?: string | null): string {
+  if (!coverStr || coverStr.trim() === '') return '';
+  const trimmed = coverStr.trim().replace(/[\r\n]+/g, '');
+
+  if (trimmed.startsWith('data:')) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('iVBORw')) {
+    return `data:image/png;base64,${trimmed}`;
+  }
+  if (trimmed.startsWith('/9j/')) {
+    return `data:image/jpeg;base64,${trimmed}`;
+  }
+  if (trimmed.startsWith('UklGR')) {
+    return `data:image/webp;base64,${trimmed}`;
+  }
+
+  if (/^[A-Za-z0-9+/=]+$/.test(trimmed.slice(0, 100)) && trimmed.length > 50) {
+    return `data:image/png;base64,${trimmed}`;
+  }
+
+  return trimmed;
+}
+
+/**
+ * Resolves cover image either from cover_image_base64 or from extracted zip archive files
+ */
+function formatCoverUrl(coverStr: string | null | undefined, files: Record<string, Uint8Array>, bookId?: string): string {
+  if (coverStr && coverStr.trim() !== '') {
+    const trimmed = coverStr.trim();
+    
+    // If it's a file inside the zip (e.g. "covers/book_1.png")
+    if (files[trimmed]) {
+      const fileData = files[trimmed];
+      const safeBuffer = fileData.buffer.slice(fileData.byteOffset, fileData.byteOffset + fileData.byteLength) as ArrayBuffer;
+      const isPng = trimmed.endsWith('.png');
+      const isJpg = trimmed.endsWith('.jpg') || trimmed.endsWith('.jpeg');
+      const isWebp = trimmed.endsWith('.webp');
+      const mime = isPng ? 'image/png' : isJpg ? 'image/jpeg' : isWebp ? 'image/webp' : 'image/jpeg';
+      
+      let binary = '';
+      const bytes = new Uint8Array(safeBuffer);
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return `data:${mime};base64,${btoa(binary)}`;
+    }
+
+    return resolveCoverUrl(trimmed);
+  }
+
+  // Fallback: search zip files for an image matching bookId
+  if (bookId) {
+    for (const key of Object.keys(files)) {
+      if (key.includes(bookId) && (key.endsWith('.png') || key.endsWith('.jpg') || key.endsWith('.jpeg') || key.endsWith('.webp'))) {
+        return formatCoverUrl(key, files);
+      }
+    }
+  }
+
+  return '';
+}
+
+/**
  * Fetch a URL as text via Rust reqwest (CORS-free).
  */
 async function rustFetch(url: string): Promise<string> {
@@ -179,7 +246,7 @@ export async function importInvronPackData(buffer: ArrayBuffer): Promise<SyncSum
       language: 'en',
       isBundled: true, // Imported from pack = local host source
       fileName: entry.original_filename,
-      coverUrl: entry.cover_image_base64 || '',
+      coverUrl: formatCoverUrl(entry.cover_image_base64, files, entry.id),
       fileUrl: '', // No cloud URL, it's a blob
       downloadStatus: 'complete',
       fileSize: entry.file_size,

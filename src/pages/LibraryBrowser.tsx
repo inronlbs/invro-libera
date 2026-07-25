@@ -6,6 +6,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { db, type Book } from '../db';
 import { getClientSession } from '../services/localAuth';
+import { resolveCoverUrl } from '../services/githubPackSync';
 
 // ============================================================================
 // TYPES
@@ -243,7 +244,9 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-          {filteredBooks.map((book) => (
+          {filteredBooks.map((book) => {
+            const cover = resolveCoverUrl(book.coverUrl);
+            return (
             <div
               key={book.id}
               onClick={() => onOpenBook(book)}
@@ -253,9 +256,9 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
                 {/* Cover Image */}
                 <div
                   className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                  style={book.coverUrl ? { backgroundImage: `url('${book.coverUrl}')` } : undefined}
+                  style={cover ? { backgroundImage: `url('${cover}')` } : undefined}
                 >
-                  {!book.coverUrl && (
+                  {!cover && (
                     <div className="w-full h-full flex items-center justify-center">
                       <span className="material-symbols-outlined text-4xl sm:text-5xl text-slate-400">menu_book</span>
                     </div>
@@ -292,11 +295,14 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
               <h5 className="font-semibold text-sm sm:text-base text-slate-900 truncate">{book.title}</h5>
               <p className="text-xs sm:text-sm text-slate-500 truncate">{book.author}</p>
             </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {filteredBooks.map((book) => (
+          {filteredBooks.map((book) => {
+            const cover = resolveCoverUrl(book.coverUrl);
+            return (
             <div
               key={book.id}
               onClick={() => onOpenBook(book)}
@@ -305,9 +311,9 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
               {/* Cover */}
               <div
                 className="w-14 h-20 sm:w-16 sm:h-24 shrink-0 rounded-lg bg-cover bg-center bg-slate-200"
-                style={book.coverUrl ? { backgroundImage: `url('${book.coverUrl}')` } : undefined}
+                style={cover ? { backgroundImage: `url('${cover}')` } : undefined}
               >
-                {!book.coverUrl && (
+                {!cover && (
                   <div className="w-full h-full flex items-center justify-center">
                     <span className="material-symbols-outlined text-3xl text-slate-400">menu_book</span>
                   </div>
@@ -340,7 +346,8 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
