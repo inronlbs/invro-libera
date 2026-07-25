@@ -642,9 +642,12 @@ pub async fn fetch_cloud_manifest(url: String) -> Result<String, String> {
     Ok(text)
 }
 
-/// Download cloud pack bytes via Rust reqwest to bypass webview CORS/network restrictions
+/// Download cloud pack bytes with streaming progress events
 #[tauri::command]
-pub async fn download_cloud_pack(url: String) -> Result<Vec<u8>, String> {
+pub async fn download_cloud_pack(app: tauri::AppHandle, url: String) -> Result<Vec<u8>, String> {
+    use tauri::Emitter;
+    use futures_util::StreamExt;
+
     let client = reqwest::Client::builder()
         .user_agent("InvroLibera/1.0")
         .build()
@@ -655,6 +658,45 @@ pub async fn download_cloud_pack(url: String) -> Result<Vec<u8>, String> {
         return Err(format!("HTTP request failed with status {}", res.status()));
     }
 
-    let bytes = res.bytes().await.map_err(|e| e.to_string())?;
-    Ok(bytes.to_vec())
+    let total_size = res.content_length().unwrap_or(0);
+    let mut downloaded: u64 = 0;
+    let mut buffer = Vec::with_capacity(total_size as usize);
+    let mut stream = res.bytes_stream();
+
+    // Emit initial progress
+    let _ = app.emit("cloud-download-progress", serde_json::json!({
+        "downloaded": 0u64,
+        "total": total_size,
+        "percent": 0u8
+    }));
+
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|e| e.to_string())?;
+        downloaded += chunk.len() as u64;
+        buffer.extend_from_slice(&chunk);
+
+        let percent = if total_size > 0 {
+            ((downloaded as f64 / total_size as f64) * 100.0) as u8
+        } else {
+            0
+        };
+
+        // Emit progress every ~500KB to avoid flooding the event bus
+        if downloaded % (512 * 1024) < chunk.len() as u64 || downloaded == total_size {
+            let _ = app.emit("cloud-download-progress", serde_json::json!({
+                "downloaded": downloaded,
+                "total": total_size,
+                "percent": percent
+            }));
+        }
+    }
+
+    // Emit 100% completion
+    let _ = app.emit("cloud-download-progress", serde_json::json!({
+        "downloaded": total_size,
+        "total": total_size,
+        "percent": 100u8
+    }));
+
+    Ok(buffer)
 }

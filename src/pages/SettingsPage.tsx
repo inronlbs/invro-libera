@@ -9,8 +9,9 @@
  * - About Section
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
 import { getSettings, updateSettings as dbUpdateSettings } from '../db';
 import { performAutoUpdate, type CloudSyncResult } from '../services/githubPackSync';
@@ -74,6 +75,9 @@ export default function SettingsPage() {
   // Cloud Sync state
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<CloudSyncResult | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<{ downloaded: number; total: number; percent: number } | null>(null);
+  const [syncPhase, setSyncPhase] = useState<string>('');
+  const unlistenRef = useRef<UnlistenFn | null>(null);
 
   useEffect(() => {
     const loadAll = async () => {
@@ -189,9 +193,32 @@ export default function SettingsPage() {
   const handleCloudSync = async () => {
     setIsSyncing(true);
     setSyncResult(null);
+    setDownloadProgress(null);
+    setSyncPhase('Checking for updates...');
+
+    // Listen for download progress events from Rust
+    try {
+      if (unlistenRef.current) {
+        unlistenRef.current();
+        unlistenRef.current = null;
+      }
+      unlistenRef.current = await listen<{ downloaded: number; total: number; percent: number }>('cloud-download-progress', (event) => {
+        setDownloadProgress(event.payload);
+        if (event.payload.percent < 100) {
+          setSyncPhase('Downloading book pack...');
+        } else {
+          setSyncPhase('Importing books...');
+        }
+      });
+    } catch {
+      // listen may fail outside Tauri, ignore
+    }
+
     try {
       const result = await performAutoUpdate();
       setSyncResult(result);
+      setDownloadProgress(null);
+      setSyncPhase('');
     } catch (e: any) {
       console.error('[CloudSync] Error syncing library:', e);
       setSyncResult({
@@ -199,8 +226,14 @@ export default function SettingsPage() {
         status: 'error',
         message: `Sync Error: ${e.message || e.toString()}`
       });
+      setDownloadProgress(null);
+      setSyncPhase('');
     } finally {
       setIsSyncing(false);
+      if (unlistenRef.current) {
+        unlistenRef.current();
+        unlistenRef.current = null;
+      }
     }
   };
 
@@ -351,6 +384,27 @@ export default function SettingsPage() {
             {isSyncing ? 'Syncing Catalog...' : 'Sync Library Now'}
           </button>
         </div>
+
+        {/* Download Progress Bar */}
+        {isSyncing && (
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center justify-between text-xs text-slate-600">
+              <span className="font-medium">{syncPhase || 'Preparing...'}</span>
+              {downloadProgress && downloadProgress.total > 0 && (
+                <span className="font-mono text-slate-500">
+                  {(downloadProgress.downloaded / (1024 * 1024)).toFixed(1)} / {(downloadProgress.total / (1024 * 1024)).toFixed(1)} MB
+                  <span className="ml-2 font-bold text-primary">{downloadProgress.percent}%</span>
+                </span>
+              )}
+            </div>
+            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${downloadProgress?.percent ?? 0}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {syncResult && (
           <div className={`p-3.5 rounded-xl border text-xs mt-3.5 space-y-1 ${
