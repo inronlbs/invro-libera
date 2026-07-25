@@ -390,7 +390,7 @@ export default function SettingsPage() {
               ) : appUpdateInfo.error ? (
                 <p className="font-medium text-amber-700">{appUpdateInfo.error}</p>
               ) : (
-                <p className="font-medium text-emerald-700">{appUpdateInfo.notes || 'Your application is fully up to date!'}</p>
+                <p className="font-medium text-emerald-700">{appUpdateInfo.notes || 'Your application (v1.3.0) is fully up to date!'}</p>
               )}
 
               {isInstallingAppUpdate && appUpdateProgress && (

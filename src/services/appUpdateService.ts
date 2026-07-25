@@ -29,7 +29,7 @@ export async function checkAppUpdate(): Promise<AppUpdateInfo> {
         updateObj: update
       };
     }
-    return { available: false, notes: 'Your application (v0.1.0) is up to date!' };
+    return { available: false, notes: 'Your application (v1.3.0) is up to date!' };
   } catch (err: any) {
     const msg = err?.message || err?.toString() || '';
     console.warn(`[AppUpdate] Update check info:`, msg);
@@ -38,7 +38,7 @@ export async function checkAppUpdate(): Promise<AppUpdateInfo> {
     if (msg.includes('release JSON') || msg.includes('404') || msg.includes('Could not fetch') || msg.includes('status code')) {
       return {
         available: false,
-        notes: 'Your application (v0.1.0) is up to date! No new software release patch is available on GitHub.'
+        notes: 'Your application (v1.3.0) is up to date!'
       };
     }
 

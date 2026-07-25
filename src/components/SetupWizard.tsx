@@ -5,7 +5,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { importKeyFile, activateLicense, type LicenseData, daysRemaining } from '../services/licenseService';
-import Titlebar from './host/Titlebar';
+import Titlebar from './layout/Titlebar';
 
 interface SetupWizardProps {
   onActivated: () => void;

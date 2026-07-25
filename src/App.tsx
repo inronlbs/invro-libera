@@ -159,8 +159,8 @@ function ReaderRoute({ resolveBookUrl }: { resolveBookUrl: (book: Book) => Promi
   }, [bookId, resolveBookUrl]);
 
   const handleClose = useCallback(() => {
-    // Navigate back to the library, not the dashboard
-    navigate(isTauriEnvironment() ? '/teacher/library' : '/library');
+    // Navigate back to the library
+    navigate('/library');
   }, [navigate]);
 
   if (!book || !fileUrl) return <RouteFallback message="Preparing reader..." />;
