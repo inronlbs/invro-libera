@@ -230,6 +230,36 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
         <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">Library</h2>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto">
+          {/* Import .invronpack Button */}
+          <button
+            onClick={async () => {
+              try {
+                const { open } = await import('@tauri-apps/plugin-dialog');
+                const { invoke } = await import('@tauri-apps/api/core');
+                const selected = await open({
+                  multiple: false,
+                  filters: [{ name: 'Invron Package', extensions: ['invronpack'] }]
+                });
+                if (selected && typeof selected === 'string') {
+                  setSyncStatus('Importing package...');
+                  const imported = await invoke<{ id: string; title: string }[]>('import_invronpack', { filePath: selected });
+                  await loadBooks();
+                  setSyncStatus(`Imported ${imported.length} book(s)`);
+                  setTimeout(() => setSyncStatus(null), 3000);
+                }
+              } catch (err: any) {
+                console.error('[LibraryBrowser] Package import error:', err);
+                setSyncStatus(`Import error: ${err.toString()}`);
+                setTimeout(() => setSyncStatus(null), 4000);
+              }
+            }}
+            className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition whitespace-nowrap shadow-xs"
+            title="Import offline .invronpack package"
+          >
+            <span className="material-symbols-outlined text-[18px]">upload_file</span>
+            Import Pack
+          </button>
+
           {/* Refresh Button */}
           <button
             onClick={handleManualSync}
@@ -240,12 +270,12 @@ export default function LibraryBrowser({ searchQuery = '', onOpenBook, onToggleF
             <span className={`material-symbols-outlined text-[18px] ${isSyncing ? 'animate-spin' : ''}`}>
               sync
             </span>
-            {isSyncing ? 'Syncing...' : 'Refresh'}
+            {isSyncing ? 'Syncing...' : 'Sync Cloud'}
           </button>
 
           {/* Sync Status Toast */}
-          {syncStatus && !isSyncing && (
-            <span className="text-xs text-slate-500 animate-pulse hidden sm:inline">{syncStatus}</span>
+          {syncStatus && (
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 hidden sm:inline">{syncStatus}</span>
           )}
 
           {/* Sort Dropdown */}

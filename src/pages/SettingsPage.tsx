@@ -1,11 +1,20 @@
 /**
- * Invro Libera - Client Settings Page
- * Simple single-page layout with Appearance, Audio & TTS, and About sections.
- * This is for the student/client browser — no host features here.
+ * Invro Libera - Standalone Settings Page
+ * Features:
+ * - Invro Key License Activation & Hardware Fingerprint
+ * - .invronpack Book Package Importing
+ * - Cloud Library Sync (GitHub Releases Feed)
+ * - Appearance & Text Customization
+ * - TTS & AI Voice Settings
+ * - About Section
  */
 
 import { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
 import { getSettings, updateSettings as dbUpdateSettings } from '../db';
+import { performAutoUpdate, type SyncSummary } from '../services/githubPackSync';
+import { isTauriEnvironment } from '../services/localAuth';
 
 // ============================================================================
 // TYPES
@@ -21,6 +30,15 @@ interface SettingsState {
   ttsPitch: number;
   autoPlay: boolean;
   highlightText: boolean;
+}
+
+interface LicenseStatus {
+  is_valid: boolean;
+  school_name?: string;
+  machine_guid: string;
+  expiry_date?: string;
+  days_remaining?: number;
+  message: string;
 }
 
 const DEFAULT_SETTINGS: SettingsState = {
@@ -43,6 +61,20 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
 
+  // License state
+  const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
+  const [licenseInput, setLicenseInput] = useState('');
+  const [licenseError, setLicenseError] = useState<string | null>(null);
+  const [isActivating, setIsActivating] = useState(false);
+
+  // Import state
+  const [isImporting, setIsImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+
+  // Cloud Sync state
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncSummary, setSyncSummary] = useState<SyncSummary | null>(null);
+
   useEffect(() => {
     const loadAll = async () => {
       try {
@@ -62,6 +94,16 @@ export default function SettingsPage() {
           ttsSpeed: dbSettings.ttsRate ?? 1,
           ttsPitch: localParsed.ttsPitch ?? 1,
         });
+
+        // Load License Status if in Tauri
+        if (isTauriEnvironment()) {
+          try {
+            const status = await invoke<LicenseStatus>('get_license_status');
+            setLicenseStatus(status);
+          } catch (e) {
+            console.warn('[License] Failed to fetch status:', e);
+          }
+        }
       } catch (e) {
         console.error('[Settings] Failed to load settings:', e);
       }
@@ -101,8 +143,64 @@ export default function SettingsPage() {
     }
   };
 
-  const testTTS = async () => {
-    const testText = 'Hello! This is a test of the text to speech system.';
+  const handleActivateLicense = async () => {
+    if (!licenseInput.trim()) return;
+    setIsActivating(true);
+    setLicenseError(null);
+    try {
+      const result = await invoke<LicenseStatus>('verify_standalone_license', { licenseKey: licenseInput.trim() });
+      setLicenseStatus(result);
+      if (!result.is_valid) {
+        setLicenseError(result.message);
+      } else {
+        setLicenseInput('');
+      }
+    } catch (e: any) {
+      setLicenseError(e.toString() || 'Failed to activate license key.');
+    } finally {
+      setIsActivating(false);
+    }
+  };
+
+  const handleImportPack = async () => {
+    if (!isTauriEnvironment()) {
+      alert('Package importing requires the Invro Libera desktop app.');
+      return;
+    }
+    try {
+      const selected = await open({
+        multiple: false,
+        filters: [{ name: 'Invron Package', extensions: ['invronpack'] }]
+      });
+      if (selected && typeof selected === 'string') {
+        setIsImporting(true);
+        setImportMessage(null);
+        const imported = await invoke<{ id: string; title: string }[]>('import_invronpack', { filePath: selected });
+        setImportMessage(`Successfully imported ${imported.length} book(s) from package!`);
+      }
+    } catch (e: any) {
+      console.error('[Import] Package import failed:', e);
+      setImportMessage(`Import error: ${e.toString()}`);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleCloudSync = async () => {
+    setIsSyncing(true);
+    setSyncSummary(null);
+    try {
+      const summary = await performAutoUpdate();
+      setSyncSummary(summary);
+    } catch (e) {
+      console.error('[CloudSync] Error syncing library:', e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const testTTS = () => {
+    const testText = 'Hello! Welcome to Invro Libera offline reader.';
     const utterance = new SpeechSynthesisUtterance(testText);
     utterance.rate = settings.ttsSpeed;
     utterance.pitch = settings.ttsPitch;
@@ -112,14 +210,156 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-[800px] w-full mx-auto p-4 sm:p-6 lg:p-8 pb-8">
+    <div className="max-w-[800px] w-full mx-auto p-4 sm:p-6 lg:p-8 pb-12">
       <h2 className="text-3xl font-black tracking-tight text-slate-900 mb-8 px-2">Settings</h2>
+
+      {/* ═══ LICENSE & ACTIVATION ═══ */}
+      <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
+        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[20px]">vpn_key</span>
+          Invro Key Activation
+        </h3>
+
+        <div className="space-y-4">
+          {/* Machine Fingerprint */}
+          <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+            <div>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Device Hardware Fingerprint</p>
+              <p className="text-sm font-mono font-bold text-slate-800">{licenseStatus?.machine_guid || 'Loading fingerprint...'}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (licenseStatus?.machine_guid) {
+                  navigator.clipboard.writeText(licenseStatus.machine_guid);
+                  alert('Hardware Fingerprint copied to clipboard!');
+                }
+              }}
+              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 transition shadow-xs"
+            >
+              Copy
+            </button>
+          </div>
+
+          {/* License Status Badge */}
+          <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+            <div>
+              <p className="text-xs font-semibold text-slate-500">License Status</p>
+              <p className="text-base font-extrabold text-slate-900">
+                {licenseStatus?.is_valid ? (licenseStatus.school_name || 'Active License') : 'Unlicensed / Free Mode'}
+              </p>
+              {licenseStatus?.expiry_date && (
+                <p className="text-xs text-slate-500 mt-0.5">Expires: {licenseStatus.expiry_date}</p>
+              )}
+            </div>
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+              licenseStatus?.is_valid 
+                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                : 'bg-amber-100 text-amber-800 border border-amber-300'
+            }`}>
+              {licenseStatus?.is_valid ? 'VALID LICENSE' : 'DEMO MODE'}
+            </span>
+          </div>
+
+          {/* Key Input */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Enter Invro License Key</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={licenseInput}
+                onChange={(e) => setLicenseInput(e.target.value)}
+                placeholder="Paste your Invro Key JSON or Activation Token..."
+                className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+              <button
+                type="button"
+                onClick={handleActivateLicense}
+                disabled={isActivating || !licenseInput.trim()}
+                className="px-5 py-2.5 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary/90 disabled:opacity-50 transition shadow-sm"
+              >
+                {isActivating ? 'Activating...' : 'Activate Key'}
+              </button>
+            </div>
+            {licenseError && (
+              <p className="text-xs font-medium text-red-600 mt-1.5">{licenseError}</p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ IMPORT BOOK PACKAGES (.invronpack) ═══ */}
+      <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
+        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[20px]">archive</span>
+          Import Book Packages (.invronpack)
+        </h3>
+        <p className="text-xs text-slate-500 mb-4">
+          Import offline encrypted book packages exported from Invron Dev Studio directly into your local library database.
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+          <div>
+            <p className="text-sm font-bold text-slate-800">Select Package File</p>
+            <p className="text-xs text-slate-500">Supports .invronpack files containing encrypted PDFs & EPUBs</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleImportPack}
+            disabled={isImporting}
+            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-[18px]">upload_file</span>
+            {isImporting ? 'Importing...' : 'Import .invronpack'}
+          </button>
+        </div>
+
+        {importMessage && (
+          <p className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-3">
+            {importMessage}
+          </p>
+        )}
+      </section>
+
+      {/* ═══ CLOUD LIBRARY SYNC ═══ */}
+      <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
+        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[20px]">cloud_sync</span>
+          Cloud Library Sync
+        </h3>
+        <p className="text-xs text-slate-500 mb-4">
+          Sync your book catalog and download missing content directly from the official Invro Libera cloud repository on GitHub.
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+          <div>
+            <p className="text-sm font-bold text-slate-800">Official Catalog Feed</p>
+            <p className="text-xs text-slate-500 font-mono">inronlbs/invro-libera-books</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleCloudSync}
+            disabled={isSyncing}
+            className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-50"
+          >
+            <span className={`material-symbols-outlined text-[18px] ${isSyncing ? 'animate-spin' : ''}`}>sync</span>
+            {isSyncing ? 'Syncing Catalog...' : 'Sync Library Now'}
+          </button>
+        </div>
+
+        {syncSummary && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 mt-3 space-y-1">
+            <p className="font-bold">Sync Completed!</p>
+            <p>New Books Added: {syncSummary.added} | Books Updated: {syncSummary.updated} | Skipped: {syncSummary.skipped}</p>
+          </div>
+        )}
+      </section>
 
       {/* ═══ APPEARANCE ═══ */}
       <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
         <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-[20px]">palette</span>
-          Appearance
+          Appearance & Reader Typography
         </h3>
 
         {/* Text Size */}
@@ -164,27 +404,6 @@ export default function SettingsPage() {
             ))}
           </div>
         </div>
-
-        {/* Line Spacing */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Line Spacing</label>
-          <div className="grid grid-cols-3 gap-2">
-            {([{ id: 'compact', label: 'Compact', icon: 'density_small' }, { id: 'normal', label: 'Normal', icon: 'density_medium' }, { id: 'relaxed', label: 'Relaxed', icon: 'density_large' }] as const).map(s => (
-              <button
-                key={s.id}
-                onClick={() => updateSetting('lineSpacing', s.id)}
-                className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition ${
-                  settings.lineSpacing === s.id
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[20px]">{s.icon}</span>
-                <span className="text-xs font-medium">{s.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
       </section>
 
       {/* ═══ AUDIO & TTS ═══ */}
@@ -197,8 +416,8 @@ export default function SettingsPage() {
         {/* TTS Toggle */}
         <div className="flex items-center justify-between py-3 border-b border-slate-100">
           <div>
-            <p className="font-medium text-sm text-slate-900">Enable AI Voice</p>
-            <p className="text-xs text-slate-500">Read books aloud (English only)</p>
+            <p className="font-medium text-sm text-slate-900">Enable AI Voice Read-Aloud</p>
+            <p className="text-xs text-slate-500">Read books aloud using natural neural voice engines</p>
           </div>
           <button
             onClick={() => updateSetting('ttsEnabled', !settings.ttsEnabled)}
@@ -210,67 +429,22 @@ export default function SettingsPage() {
 
         {settings.ttsEnabled && (
           <>
-            {/* Voice Selection */}
             <div className="py-3 border-b border-slate-100">
               <label className="block text-xs font-medium text-slate-700 mb-2">Voice</label>
-              <div className="relative mt-2">
-                <select
-                  value={settings.ttsVoice}
-                  onChange={(e) => updateSetting('ttsVoice', e.target.value)}
-                  className="w-full appearance-none bg-white border border-slate-200 hover:border-slate-300 rounded-xl px-4 py-3 text-[13.5px] font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer shadow-sm"
-                >
-                  <option value="">Auto (System Default)</option>
-                  {availableVoices.map(voice => (
-                    <option key={voice.name} value={voice.name}>{voice.name.replace('Microsoft ', '').replace(' Desktop', '')} ({voice.lang})</option>
-                  ))}
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                  <span className="material-symbols-outlined text-[20px]">expand_more</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Speed */}
-            <div className="py-3 border-b border-slate-100">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-medium text-slate-700">Speed</label>
-                <span className="text-sm text-primary font-medium">{settings.ttsSpeed.toFixed(1)}x</span>
-              </div>
-              <input type="range" min="0.5" max="2" step="0.1" value={settings.ttsSpeed} onChange={e => updateSetting('ttsSpeed', parseFloat(e.target.value))} className="w-full accent-primary" />
-              <div className="flex justify-between text-xs text-slate-400 mt-1"><span>0.5x</span><span>2x</span></div>
-            </div>
-
-            {/* Highlight Text */}
-            <div className="flex items-center justify-between py-3 border-b border-slate-100">
-              <div>
-                <p className="font-medium text-sm text-slate-900">Highlight Text</p>
-                <p className="text-xs text-slate-500">Highlight words as they're spoken</p>
-              </div>
-              <button
-                onClick={() => updateSetting('highlightText', !settings.highlightText)}
-                className={`relative w-14 h-8 rounded-full transition-colors ${settings.highlightText ? 'bg-primary' : 'bg-slate-300'}`}
+              <select
+                value={settings.ttsVoice}
+                onChange={(e) => updateSetting('ttsVoice', e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-700"
               >
-                <span className={`absolute top-1 size-6 bg-white rounded-full shadow transition-transform ${settings.highlightText ? 'left-7' : 'left-1'}`}></span>
-              </button>
+                <option value="">Auto (System Default)</option>
+                {availableVoices.map(voice => (
+                  <option key={voice.name} value={voice.name}>{voice.name.replace('Microsoft ', '').replace(' Desktop', '')} ({voice.lang})</option>
+                ))}
+              </select>
             </div>
 
-            {/* Auto-play */}
-            <div className="flex items-center justify-between py-3 border-b border-slate-100">
-              <div>
-                <p className="font-medium text-sm text-slate-900">Auto-Play Next</p>
-                <p className="text-xs text-slate-500">Continue to the next chapter automatically</p>
-              </div>
-              <button
-                onClick={() => updateSetting('autoPlay', !settings.autoPlay)}
-                className={`relative w-14 h-8 rounded-full transition-colors ${settings.autoPlay ? 'bg-primary' : 'bg-slate-300'}`}
-              >
-                <span className={`absolute top-1 size-6 bg-white rounded-full shadow transition-transform ${settings.autoPlay ? 'left-7' : 'left-1'}`}></span>
-              </button>
-            </div>
-
-            {/* Test Button */}
             <div className="pt-4">
-              <button onClick={testTTS} className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 transition">
+              <button onClick={testTTS} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 transition shadow-sm">
                 <span className="material-symbols-outlined text-[18px]">play_arrow</span>
                 Test Voice
               </button>
@@ -283,27 +457,17 @@ export default function SettingsPage() {
       <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
         <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-[20px]">info</span>
-          About
+          About Invro Libera
         </h3>
 
         <div className="space-y-4">
-          <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
+          <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
             <img src="/favicon.png" alt="Invro Libera" className="h-12 w-12 object-contain" />
             <div>
-              <p className="font-bold text-slate-900">Invro Libera</p>
-              <p className="text-sm text-slate-500">v1.0.0 • Offline E-Library</p>
+              <p className="font-extrabold text-slate-900">Invro Libera Standalone</p>
+              <p className="text-xs text-slate-500">v1.0.2 • Offline E-Library & Encrypted Book Reader</p>
             </div>
           </div>
-
-          <div className="flex items-center justify-between py-3 border-b border-slate-100">
-            <span className="text-sm text-slate-700">Platform</span>
-            <span className="text-sm font-semibold text-slate-900">Chrome Client</span>
-          </div>
-          <div className="flex items-center justify-between py-3 border-b border-slate-100">
-            <span className="text-sm text-slate-700">Data Sync</span>
-            <span className="text-sm font-semibold text-slate-900">Auto (from Host)</span>
-          </div>
-
           <p className="text-xs text-slate-400 pt-2">
             Built by Invron Labs • © 2026 All rights reserved.
           </p>
