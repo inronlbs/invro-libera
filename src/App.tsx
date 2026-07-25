@@ -437,31 +437,35 @@ function App() {
 
   return (
     <GlobalErrorBoundary>
-      <Titlebar />
-      <Routes>
-        <Route path="*" element={
-          <div className="min-h-[calc(100vh-36px)] bg-background-light">
-            <ClassSessionBanner onSessionJoined={handleStudentLogin} />
-            <Routes>
-              <Route element={
-                <AppShell
-                  student={activeStudent}
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  handleOpenBook={handleOpenBook}
-                />
-              }>
-                <Route index element={<HomeRoute />} />
-                <Route path="library" element={<LibraryRoute />} />
-                <Route path="favorites" element={<FavoritesRoute />} />
-                <Route path="settings" element={<SettingsRoute />} />
-                <Route path="reader/:bookId" element={<ReaderRoute resolveBookUrl={resolveBookUrl} />} />
-              </Route>
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
-        } />
-      </Routes>
+      <div className="flex flex-col h-screen w-screen overflow-hidden">
+        <Titlebar />
+        <div className="flex flex-1 min-h-0 bg-background-light dark:bg-background-dark">
+          <Routes>
+            <Route path="*" element={
+              <div className="flex flex-col flex-1 min-h-0 bg-background-light">
+                <ClassSessionBanner onSessionJoined={handleStudentLogin} />
+                <Routes>
+                  <Route element={
+                    <AppShell
+                      student={activeStudent}
+                      searchQuery={searchQuery}
+                      setSearchQuery={setSearchQuery}
+                      handleOpenBook={handleOpenBook}
+                    />
+                  }>
+                    <Route index element={<HomeRoute />} />
+                    <Route path="library" element={<LibraryRoute />} />
+                    <Route path="favorites" element={<FavoritesRoute />} />
+                    <Route path="settings" element={<SettingsRoute />} />
+                    <Route path="reader/:bookId" element={<ReaderRoute resolveBookUrl={resolveBookUrl} />} />
+                  </Route>
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </div>
+            } />
+          </Routes>
+        </div>
+      </div>
     </GlobalErrorBoundary>
   );
 }

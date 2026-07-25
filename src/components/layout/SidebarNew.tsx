@@ -95,7 +95,7 @@ export default function SidebarNew({
       {/* Desktop Sidebar */}
       <aside ref={desktopMenuRef} className={`
         flex fixed left-0 bg-white border-r border-slate-200 flex-col shrink-0 transition-all duration-300 z-50
-        ${isTauri ? 'top-9 h-[calc(100vh-36px)]' : 'top-0 h-screen'}
+        ${isTauri ? 'top-10 h-[calc(100vh-40px)]' : 'top-0 h-screen'}
         ${isCollapsed ? 'w-20' : 'w-64'}
       `}>
         {/* Logo */}

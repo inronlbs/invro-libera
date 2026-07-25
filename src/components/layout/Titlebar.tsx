@@ -1,109 +1,92 @@
-import { useState, useEffect } from 'react';
+/**
+ * Invro Libera - Custom Window Title Bar
+ * Replaces the OS title bar with a branded, draggable bar matching the CS design system.
+ * Only used in the Tauri environment.
+ */
+
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { isTauriEnvironment } from '../../services/localAuth';
 
 export default function Titlebar() {
-  const [isMaximized, setIsMaximized] = useState(false);
-
-  useEffect(() => {
-    if (!isTauriEnvironment()) return;
-    const appWindow = getCurrentWindow();
-
-    const checkMaximized = async () => {
-      try {
-        const max = await appWindow.isMaximized();
-        setIsMaximized(max);
-      } catch {
-        // ignore
-      }
-    };
-    checkMaximized();
-
-    const unlisten = appWindow.onResized(() => {
-      checkMaximized();
-    });
-
-    return () => {
-      unlisten.then(f => f()).catch(() => {});
-    };
-  }, []);
-
   if (!isTauriEnvironment()) return null;
 
-  const appWindow = getCurrentWindow();
-
-  const handleMinimize = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    appWindow.minimize().catch(console.error);
-  };
-
-  const handleToggleMaximize = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      const max = await appWindow.isMaximized();
-      if (max) {
-        await appWindow.unmaximize();
-        setIsMaximized(false);
-      } else {
-        await appWindow.maximize();
-        setIsMaximized(true);
+  const handleDrag = async (e: React.MouseEvent) => {
+    if (e.buttons === 1 && isTauriEnvironment()) {
+      try {
+        await getCurrentWindow().startDragging();
+      } catch (err) {
+        console.error('Failed to start dragging window:', err);
       }
-    } catch (e) {
-      console.error(e);
     }
   };
 
-  const handleClose = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    appWindow.close().catch(console.error);
+  const handleMinimize = async () => {
+    if (isTauriEnvironment()) {
+      try {
+        await getCurrentWindow().minimize();
+      } catch (err) {
+        console.error('Failed to minimize window:', err);
+      }
+    }
+  };
+
+  const handleToggleMaximize = async () => {
+    if (isTauriEnvironment()) {
+      try {
+        await getCurrentWindow().toggleMaximize();
+      } catch (err) {
+        console.error('Failed to toggle maximize:', err);
+      }
+    }
+  };
+
+  const handleClose = async () => {
+    if (isTauriEnvironment()) {
+      try {
+        await getCurrentWindow().close();
+      } catch (err) {
+        console.error('Failed to close window:', err);
+      }
+    }
   };
 
   return (
-    <div 
-      data-tauri-drag-region 
-      className="w-full h-9 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-3 select-none fixed top-0 left-0 right-0 z-[10000] text-slate-300"
+    <div
+      onMouseDown={handleDrag}
+      className="h-10 select-none flex justify-between items-center bg-white border-b border-slate-200 shrink-0 w-full z-[100] relative cursor-default"
     >
-      {/* Left: App Brand & Title */}
-      <div data-tauri-drag-region className="flex items-center gap-2.5 pointer-events-none">
-        <div className="w-5 h-5 rounded-md bg-ocean-500 flex items-center justify-center text-white text-[10px] font-black tracking-tighter">
-          IL
-        </div>
-        <span className="text-xs font-bold text-slate-200 tracking-wide">Invro Libera</span>
-        <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
-          Standalone
-        </span>
+      {/* Left: App Icon + Title */}
+      <div className="pl-4 flex items-center gap-2.5 text-xs font-semibold text-slate-500 tracking-wide pointer-events-none">
+        <img src="/favicon.png" alt="Icon" className="w-5 h-5 rounded-sm drop-shadow-sm" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+        <span className="text-slate-600 font-bold">Invro Libera</span>
+        <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ml-1">Standalone</span>
       </div>
 
-      {/* Center: Main Drag Area */}
-      <div data-tauri-drag-region className="flex-1 h-full cursor-default" />
-
       {/* Right: Window Controls */}
-      <div className="flex items-center gap-1 shrink-0 -mr-1">
+      <div className="flex h-full" onMouseDown={(e) => e.stopPropagation()}>
         <button
           type="button"
           onClick={handleMinimize}
-          className="w-9 h-7 flex items-center justify-center rounded-md hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+          className="px-4 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
           title="Minimize"
         >
-          <span className="material-symbols-outlined text-[16px]">remove</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect y="5" width="12" height="2" rx="1" fill="currentColor"/></svg>
         </button>
         <button
           type="button"
           onClick={handleToggleMaximize}
-          className="w-9 h-7 flex items-center justify-center rounded-md hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
-          title={isMaximized ? "Restore" : "Maximize"}
+          className="px-4 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+          title="Maximize"
         >
-          <span className="material-symbols-outlined text-[14px]">
-            {isMaximized ? 'filter_none' : 'crop_square'}
-          </span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.5" fill="none"/></svg>
         </button>
         <button
           type="button"
           onClick={handleClose}
-          className="w-9 h-7 flex items-center justify-center rounded-md hover:bg-red-600 hover:text-white text-slate-400 transition-colors cursor-pointer ml-0.5"
+          className="px-4 hover:bg-red-500 hover:text-white flex items-center justify-center text-slate-400 transition-colors"
           title="Close"
         >
-          <span className="material-symbols-outlined text-[16px]">close</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1L11 11M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
       </div>
     </div>
