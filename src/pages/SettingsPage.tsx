@@ -388,7 +388,18 @@ export default function SettingsPage() {
                   </button>
                 </div>
               ) : appUpdateInfo.error ? (
-                <p className="font-medium text-amber-700">{appUpdateInfo.error}</p>
+                <div className="space-y-2">
+                  <p className="font-medium text-amber-700">{appUpdateInfo.error}</p>
+                  <a
+                    href="https://github.com/inronlbs/invro-libera/releases/download/v1.4.1-standalone/Invro.Libera.Standalone_1.4.1_x64-setup.exe"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-lg shadow-sm hover:bg-primary/90 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">download</span>
+                    Download v1.4.1 Installer (.exe) Directly
+                  </a>
+                </div>
               ) : (
                 <p className="font-medium text-emerald-700">{appUpdateInfo.notes || 'Your application (v1.4.1) is fully up to date!'}</p>
               )}

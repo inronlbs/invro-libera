@@ -61,22 +61,32 @@ export async function downloadAndInstallAppUpdate(
   let downloadedBytes = 0;
   let totalBytes = 0;
 
-  await updateObj.downloadAndInstall((event: any) => {
-    switch (event.event) {
-      case 'Started':
-        totalBytes = event.data.contentLength || 0;
-        console.log(`[AppUpdate] Started download, total: ${totalBytes} bytes`);
-        break;
-      case 'Progress':
-        downloadedBytes += event.data.chunkLength;
-        onProgress?.(downloadedBytes, totalBytes);
-        break;
-      case 'Finished':
-        console.log('[AppUpdate] Download finished. Relaunching application...');
-        break;
-    }
-  });
+  try {
+    await updateObj.downloadAndInstall((event: any) => {
+      switch (event.event) {
+        case 'Started':
+          totalBytes = event.data.contentLength || 0;
+          console.log(`[AppUpdate] Started download, total: ${totalBytes} bytes`);
+          break;
+        case 'Progress':
+          downloadedBytes += event.data.chunkLength;
+          onProgress?.(downloadedBytes, totalBytes);
+          break;
+        case 'Finished':
+          console.log('[AppUpdate] Download finished. Relaunching application...');
+          break;
+      }
+    });
 
-  // Automatically restart application with new version applied
-  await relaunch();
+    // Automatically restart application with new version applied
+    await relaunch();
+  } catch (err: any) {
+    const errorMsg = err?.message || err?.toString() || '';
+    console.warn('[AppUpdate] Updater error, using direct download fallback:', errorMsg);
+
+    // Fallback: Open direct release installer link in browser
+    const installerUrl = 'https://github.com/inronlbs/invro-libera/releases/download/v1.4.1-standalone/Invro.Libera.Standalone_1.4.1_x64-setup.exe';
+    window.open(installerUrl, '_blank');
+    throw new Error('Opening v1.4.1 direct installer download in your browser...');
+  }
 }
