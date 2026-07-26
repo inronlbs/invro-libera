@@ -348,7 +348,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900">Software Updates</h3>
-              <p className="text-xs text-slate-500">v1.4.0 • Standalone Desktop Application</p>
+              <p className="text-xs text-slate-500">v1.4.1 • Standalone Desktop Application</p>
             </div>
           </div>
 
@@ -390,7 +390,7 @@ export default function SettingsPage() {
               ) : appUpdateInfo.error ? (
                 <p className="font-medium text-amber-700">{appUpdateInfo.error}</p>
               ) : (
-                <p className="font-medium text-emerald-700">{appUpdateInfo.notes || 'Your application (v1.4.0) is fully up to date!'}</p>
+                <p className="font-medium text-emerald-700">{appUpdateInfo.notes || 'Your application (v1.4.1) is fully up to date!'}</p>
               )}
 
               {isInstallingAppUpdate && appUpdateProgress && (
@@ -515,7 +515,7 @@ export default function SettingsPage() {
 
         {/* ═══ ABOUT FOOTER ═══ */}
         <div className="text-center pt-4 text-xs text-slate-400">
-          <p className="font-semibold text-slate-500">Invro Libera Standalone v1.4.0</p>
+          <p className="font-semibold text-slate-500">Invro Libera Standalone v1.4.1</p>
           <p>© 2026 Invron Labs • All rights reserved.</p>
         </div>
       </div>
