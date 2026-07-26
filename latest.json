@@ -1,11 +1,11 @@
 {
-  "version": "1.4.1",
-  "notes": "Invro Libera Standalone v1.4.1 release with native window fullscreen reading, high-res Start Menu tile icons, and clean minimal settings.",
+  "version": "1.5.0",
+  "notes": "Invro Libera Standalone v1.5.0 release with native window fullscreen reading, high-res Start Menu tile icons, and clean minimal settings.",
   "pub_date": "2026-07-26T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRVm1hMVZTM1J0aURIODJ6cWQxdjNOcFBSSjZueDdPOXN0MDRyTFRteURaN1FKbU04d3Z1UXU1U3lvVTVhNWg2RUVFa1FzdytYMFhwdUVUZExnbW9nZXlFMUU3bGpqTlFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1MDI1MDM3CWZpbGU6SW52cm8gTGliZXJhIFN0YW5kYWxvbmVfMS40LjFfeDY0LXNldHVwLmV4ZQpNVUtDZXB6Vy90NXhjWlRPc054MVdveUdoZ0d1eUZibjRLKzZVeE9nc2NhdDZDUDk4RThoQzUyYTlndm54VjFtOUtENkN1aVV2cmt3OE96WmhBN1JEQT09Cg==",
-      "url": "https://github.com/inronlbs/invro-libera/releases/download/v1.4.1-standalone/Invro.Libera.Standalone_1.4.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRVm1hMVZTM1J0aUp0MExUSC9SaU42cnllM1FnRGZ1VTh3cE9mRGJKc1VTdEhBMnlXN2FBa0lQQXBibWlFZzRxOVFxZlkyZDBseHVCUmcyaG4yWmZYUStVcVpKZ0xrdWdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1MDI1NTM4CWZpbGU6SW52cm8gTGliZXJhIFN0YW5kYWxvbmVfMS41LjBfeDY0LXNldHVwLmV4ZQp4V3I2SEE4RmlSRzZiZDVxZ2NabGs2SEhDcThCZ0xBb3ZzeStObllLS0ZwdzdsaFk4S09ZMkt1TXFocm15c0RoWnZhRTBXYXVCSXh0NE9yd2wrQXJCQT09Cg==",
+      "url": "https://github.com/inronlbs/invro-libera/releases/download/v1.5.0-standalone/Invro.Libera.Standalone_1.5.0_x64-setup.exe"
     }
   }
 }
