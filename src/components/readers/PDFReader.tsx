@@ -438,36 +438,33 @@ export default function PDFReader({ book, fileUrl, onClose }: PDFReaderProps) {
     }
   };
 
+  const readerOuterRef = useRef<HTMLDivElement>(null);
+
   const toggleFullscreen = async () => {
     try {
-      const isCurrentlyFs = isFullscreen || !!document.fullscreenElement || (appWindow ? await appWindow.isFullscreen() : false);
-
-      if (!isCurrentlyFs) {
-        // Enter Fullscreen: collapse left sidebar to maximize book reading space
-        setShowSidebar(false);
-        if (containerRef.current?.requestFullscreen) {
-          await containerRef.current.requestFullscreen().catch(() => {});
-        } else if (document.documentElement.requestFullscreen) {
-          await document.documentElement.requestFullscreen().catch(() => {});
-        }
-        if (appWindow) {
-          await appWindow.setFullscreen(true).catch(() => {});
-        }
-        setIsFullscreen(true);
+      if (appWindow) {
+        const current = await appWindow.isFullscreen();
+        const next = !current;
+        await appWindow.setFullscreen(next);
+        setIsFullscreen(next);
+        setShowSidebar(!next);
       } else {
-        // Exit Fullscreen: restore sidebar
-        setShowSidebar(true);
-        if (document.fullscreenElement && document.exitFullscreen) {
-          await document.exitFullscreen().catch(() => {});
+        if (!document.fullscreenElement) {
+          if (document.documentElement.requestFullscreen) {
+            await document.documentElement.requestFullscreen();
+          }
+          setIsFullscreen(true);
+          setShowSidebar(false);
+        } else {
+          if (document.exitFullscreen) {
+            await document.exitFullscreen();
+          }
+          setIsFullscreen(false);
+          setShowSidebar(true);
         }
-        if (appWindow) {
-          await appWindow.setFullscreen(false).catch(() => {});
-        }
-        setIsFullscreen(false);
       }
     } catch (err) {
-      console.warn('[PDFReader] Fullscreen toggle fallback:', err);
-      setShowSidebar(!showSidebar);
+      console.warn('[PDFReader] Fullscreen error:', err);
       setIsFullscreen(!isFullscreen);
     }
   };
@@ -529,7 +526,15 @@ export default function PDFReader({ book, fileUrl, onClose }: PDFReaderProps) {
   const theme = readerThemes[readerTheme];
 
   return (
-    <div ref={containerRef} className={`absolute inset-0 z-10 flex select-none reader-theme reader-theme-${readerTheme}`} style={{ height: '100%' }}>
+    <div 
+      ref={readerOuterRef} 
+      className={`select-none reader-theme reader-theme-${readerTheme} ${
+        isFullscreen 
+          ? 'fixed inset-0 z-[99999] w-screen h-screen flex flex-col' 
+          : 'absolute inset-0 z-10 flex h-full w-full'
+      }`} 
+      style={{ background: theme.bg }}
+    >
 
       {/* Mobile Sidebar Backdrop removed */}
 

@@ -1,11 +1,11 @@
 {
-  "version": "v1.3.0-standalone",
-  "notes": "Invro Libera Standalone v1.3.0 release with Cloud Library Sync, streaming chunk downloads, auto-updater, and ultra-minimal settings redesign.",
+  "version": "v1.4.0-standalone",
+  "notes": "Invro Libera Standalone v1.4.0 release with native window fullscreen reading, high-res Start Menu tile icons, and clean minimal settings.",
   "pub_date": "2026-07-26T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
       "signature": "",
-      "url": "https://github.com/inronlbs/invro-libera/releases/download/v1.3.0-standalone/Invro.Libera.Standalone_1.3.0_x64-setup.exe"
+      "url": "https://github.com/inronlbs/invro-libera/releases/download/v1.4.0-standalone/Invro.Libera.Standalone_1.4.0_x64-setup.exe"
     }
   }
 }

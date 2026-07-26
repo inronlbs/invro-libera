@@ -4,11 +4,29 @@
  * Only used in the Tauri environment.
  */
 
+import { useState, useEffect } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { isTauriEnvironment } from '../../services/localAuth';
 
 export default function Titlebar() {
   if (!isTauriEnvironment()) return null;
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (!isTauriEnvironment()) return;
+    const win = getCurrentWindow();
+    const checkFs = async () => {
+      try {
+        setIsFullscreen(await win.isFullscreen());
+      } catch {}
+    };
+    checkFs();
+    const unlisten = win.onResized(() => { checkFs(); });
+    return () => { unlisten.then(fn => fn()); };
+  }, []);
+
+  if (isFullscreen) return null;
 
   const handleDrag = async (e: React.MouseEvent) => {
     if (e.buttons === 1 && isTauriEnvironment()) {
